@@ -1,6 +1,7 @@
 package com.sarmich.timetable.auth;
 
-import com.sarmich.timetable.exp.BadRequestException;
+import com.sarmich.timetable.exp.exception.BadRequestException;
+import com.sarmich.timetable.mapper.AuthMapper;
 import com.sarmich.timetable.profile.ProfileRepository;
 import com.sarmich.timetable.profile.ProfileRole;
 import com.sarmich.timetable.utils.JwtUtil;
@@ -18,19 +19,15 @@ public class AuthService {
 
     public void signUp(SignUpRequest request) {
         ProfileEntity entity = AuthMapper.INSTANCE.toEntity(request);
-        entity.setPassword(MD5Util.convertToMD5(request.getPassword()));
+        entity.setPassword(MD5Util.convertToMD5(request.password()));
         entity.setRole(ProfileRole.ROLE_ADMIN);
         profileRepository.save(entity);
     }
 
-    private boolean isValidPhone(String phone) {
-        return phone != null && phone.startsWith("998") && phone.length() == 12;
-    }
-
     public ResponseEntity<?> signIn(LoginRequest dto) {
-        if ("admin@gmail.com".equals(dto.getEmail()) && "admin".equals(dto.getPassword())) {
+        if ("admin@gmail.com".equals(dto.email()) && "admin".equals(dto.password())) {
             return ResponseEntity.ok(new AuthResponse(
-                    JwtUtil.generateJwt(dto.getEmail(), dto.getPassword(), ProfileRole.ROLE_ADMIN)
+                    JwtUtil.generateJwt(dto.email(), dto.password(), ProfileRole.ROLE_ADMIN)
             ));
         }
         throw new BadRequestException("email or password incorrect");

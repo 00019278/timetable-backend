@@ -5,12 +5,12 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter
-@Setter
-public class LoginRequest {
 
-    @Email
-    private String email;
+public record LoginRequest(
 
-    @Size(min = 6)
-    private String password;}
+        @Email
+        String email,
+
+        @Size(min = 6)
+        String password) {
+}

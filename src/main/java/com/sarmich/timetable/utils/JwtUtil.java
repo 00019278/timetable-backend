@@ -1,6 +1,6 @@
 package com.sarmich.timetable.utils;
 
-import com.sarmich.timetable.exp.MethodNotAllowedException;
+import com.sarmich.timetable.exp.exception.InvalidOperationException;
 import com.sarmich.timetable.profile.ProfileRole;
 import io.jsonwebtoken.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -79,7 +79,7 @@ public class JwtUtil {
         } catch (JwtException e) {
             e.printStackTrace();
         }
-        throw new MethodNotAllowedException("Jwt exception");
+        throw new InvalidOperationException("Jwt exception");
     }
 
     public JwtDTO getJwtDTO(String authorization) {
@@ -100,7 +100,7 @@ public class JwtUtil {
             }
         }
         if (!roleFound) {
-            throw new MethodNotAllowedException("Method not allowed");
+            throw new InvalidOperationException("Method not allowed");
         }
         return jwtDTO;
     }
@@ -115,7 +115,7 @@ public class JwtUtil {
             }
         }
         if (!roleFound) {
-            throw new MethodNotAllowedException("Method not allowed");
+            throw new InvalidOperationException("Method not allowed");
         }
     }
 }

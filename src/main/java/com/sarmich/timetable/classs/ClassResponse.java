@@ -6,13 +6,11 @@ import lombok.Setter;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.util.List;
-@Setter
-@Getter
-public class ClassResponse {
+public record ClassResponse (
 
-    private Long id;
-    private String shortName;
-    private String name;
-    private List<DayOfWeek> days;
-    private Instant createdDate;
-}
+     Long id,
+     String shortName,
+     String name,
+     Days days,
+     Instant createdDate
+){}

@@ -14,8 +14,6 @@ import java.util.Map;
 
 @Entity
 @Table(name = "class")
-@Getter
-@Setter
 public class ClassEntity {
 
     @Id
@@ -32,12 +30,75 @@ public class ClassEntity {
     @JdbcTypeCode(SqlTypes.JSON)
     private Map<String, Object> days;
 
-    private boolean deleted;
+    private boolean deleted=false;
 
     @CreatedDate
-    private Instant createdDate;
+    private Instant createdDate=Instant.now();
 
     @LastModifiedDate
-    private Instant updatedDate;
+    private Instant updatedDate=Instant.now();
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getShortName() {
+        return shortName;
+    }
+
+    public void setShortName(String shortName) {
+        this.shortName = shortName;
+    }
+
+    public Integer getProfileId() {
+        return profileId;
+    }
+
+    public void setProfileId(Integer profileId) {
+        this.profileId = profileId;
+    }
+
+    public Map<String, Object> getDays() {
+        return days;
+    }
+
+    public void setDays(Map<String, Object> days) {
+        this.days = days;
+    }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
+
+    public Instant getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public Instant getUpdatedDate() {
+        return updatedDate;
+    }
+
+    public void setUpdatedDate(Instant updatedDate) {
+        this.updatedDate = updatedDate;
+    }
 }

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class CompanyService {
 
-    public void create(CompanyRequestDto company) {
+    public void create(CompanyRequest company) {
         // Your implementation logic goes here
     }
 }

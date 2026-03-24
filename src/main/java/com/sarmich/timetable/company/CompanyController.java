@@ -14,7 +14,7 @@ public class CompanyController {
     private final CompanyService companyService;
 
     @PostMapping
-    public void create(@RequestBody CompanyRequestDto company) {
+    public void create(@RequestBody CompanyRequest company) {
         companyService.create(company);
     }
 }

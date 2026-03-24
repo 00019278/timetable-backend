@@ -1,6 +1,7 @@
 package com.sarmich.timetable.subject;
 
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
@@ -8,13 +9,10 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("subject")
+@AllArgsConstructor
 public class SubjectController {
 
     private final SubjectService subjectService;
-
-    public SubjectController(SubjectService subjectService) {
-        this.subjectService = subjectService;
-    }
 
     @PostMapping
     public SubjectResponse addSubject(@Valid @RequestBody SubjectRequest dto) {
@@ -22,7 +20,7 @@ public class SubjectController {
     }
 
     @PutMapping
-    public SubjectResponse editSubject(@Valid @RequestBody SubjectUpdateDto dto) {
+    public SubjectResponse editSubject(@Valid @RequestBody SubjectUpdateRequest dto) {
         return subjectService.update(dto);
     }
 

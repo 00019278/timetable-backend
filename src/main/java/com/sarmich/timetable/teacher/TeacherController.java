@@ -1,6 +1,7 @@
 package com.sarmich.timetable.teacher;
 
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -10,14 +11,10 @@ import java.util.List;
 @RestController
 @RequestMapping("teacher")
 @Log4j2
+@AllArgsConstructor
 public class TeacherController {
 
     private final TeacherService teacherService;
-
-    public TeacherController(TeacherService teacherService) {
-        this.teacherService = teacherService;
-    }
-
     @PostMapping
     public TeacherResponse create(@Valid @RequestBody TeacherRequest dto) {
         return teacherService.create(dto);

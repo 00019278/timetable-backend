@@ -1,11 +1,9 @@
 package com.sarmich.timetable.subject;
 
-public class SubjectResponse {
+public record SubjectResponse (
 
-    private Long id;
-    private String shortName;
-    private String name;
-    private Integer priority;
-
-    // Constructors, getters, setters, etc.
-}
+     Long id,
+     String shortName,
+     String name,
+     Integer priority
+){}

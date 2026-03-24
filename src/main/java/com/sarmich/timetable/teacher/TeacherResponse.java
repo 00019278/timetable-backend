@@ -1,16 +1,15 @@
 package com.sarmich.timetable.teacher;
 
 import java.time.Instant;
-import java.util.List;
 
-public class TeacherResponse {
-    private Long id;
-    private String name;
-    private String lastName;
-    private Long subjectId;
-    private List<TimeSlot> timeSlotList;
-    private Instant createdDate;
-    private Instant updatedDate;
+public record TeacherResponse(
+        Long id,
+        String firstName,
+        String lastName,
+        Long subjectId,
+        LessonTime lessonTimes,
+        Instant createdDate,
+        Instant updatedDate
 
-    // Constructors, getters, and setters
+) {
 }

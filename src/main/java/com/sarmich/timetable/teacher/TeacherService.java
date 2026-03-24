@@ -2,39 +2,51 @@ package com.sarmich.timetable.teacher;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sarmich.timetable.exp.ItemNotFoundException;
+import com.sarmich.timetable.exp.exception.NotFoundException;
+import com.sarmich.timetable.mapper.TeacherMapper;
+import com.sarmich.timetable.subject.SubjectEntity;
+import com.sarmich.timetable.subject.SubjectRepository;
 import com.sarmich.timetable.utils.SpringSecurityUtil;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
+@AllArgsConstructor
 public class TeacherService {
     private final TeacherRepository teacherRepository;
     private final ObjectMapper objectMapper;
+    private final SubjectRepository subjectRepository;
 
-    public TeacherService(TeacherRepository teacherRepository, ObjectMapper objectMapper) {
-        this.teacherRepository = teacherRepository;
-        this.objectMapper = objectMapper;
-    }
 
     public TeacherResponse create(TeacherRequest dto) {
+        SubjectEntity subject = subjectRepository.findByIdAndProfileIdAndDeletedFalse(dto.subjectId(), SpringSecurityUtil.getProfileId());
+        if (subject == null) {
+            throw new NotFoundException("Subject not found");
+        }
         TeacherEntity entity = TeacherMapper.INSTANCE.toEntity(dto);
         entity.setProfileId(SpringSecurityUtil.getProfileId());
-        entity.setTimeSlots(objectMapper.convertValue(dto.getTimeSlotList(), new TypeReference<Map<String, Object>>() {
+        entity.setLessonTimes(objectMapper.convertValue(dto.lessonTimes(), new TypeReference<>() {
         }));
         entity = teacherRepository.save(entity);
-        return TeacherMapper.INSTANCE.toResponse(entity);
+        return TeacherMapper.INSTANCE.toResponse(entity, objectMapper);
     }
 
     public TeacherResponse update(TeacherUpdateRequest dto) {
-        TeacherEntity old = teacherRepository.findByIdAndDeletedFalse(dto.getId());
+        TeacherEntity old = teacherRepository.findByIdAndDeletedFalse(dto.id());
+        if (old == null) {
+            throw new NotFoundException("Teacher not found");
+        }
+        SubjectEntity subject = subjectRepository.findByIdAndProfileIdAndDeletedFalse(dto.subjectId(), SpringSecurityUtil.getProfileId());
+        if (subject == null) {
+            throw new NotFoundException("Subject not found");
+        }
         TeacherEntity entity = TeacherMapper.INSTANCE.toEntity(dto);
-        entity.setTimeSlots(objectMapper.convertValue(dto.getTimeSlotList(), new TypeReference<Map<String, Object>>() {
+        entity.setLessonTimes(objectMapper.convertValue(dto.lessonTimes(), new TypeReference<>() {
         }));
         entity = teacherRepository.save(entity);
-        return TeacherMapper.INSTANCE.toResponse(entity);
+        return TeacherMapper.INSTANCE.toResponse(entity, objectMapper);
     }
 
     public void delete(Long id) {
@@ -45,13 +57,13 @@ public class TeacherService {
 
     public TeacherResponse get(Long id) {
         return TeacherMapper.INSTANCE.toResponse(
-                teacherRepository.findByIdAndDeletedFalse(id));
+                teacherRepository.findByIdAndDeletedFalse(id), objectMapper);
 
     }
 
     public List<TeacherResponse> findAll() {
         return teacherRepository.findAllByProfileIdAndDeletedFalse(SpringSecurityUtil.getProfileId()).stream()
-                .map(TeacherMapper.INSTANCE::toResponse)
+                .map(t -> TeacherMapper.INSTANCE.toResponse(t, objectMapper))
                 .toList();
     }
 }

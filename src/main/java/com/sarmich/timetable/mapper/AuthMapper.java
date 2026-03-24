@@ -1,6 +1,6 @@
-package com.sarmich.timetable.auth;
+package com.sarmich.timetable.mapper;
 
-import com.sarmich.timetable.mapper.InstantMapper;
+import com.sarmich.timetable.auth.SignUpRequest;
 import com.sarmich.timetable.utils.ProfileEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;

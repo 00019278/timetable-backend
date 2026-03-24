@@ -6,13 +6,10 @@ import lombok.Setter;
 
 import java.time.DayOfWeek;
 import java.util.List;
-@Getter
-@Setter
-public class ClassUpdateRequest {
-
+public record ClassUpdateRequest (
     @NotNull(message = "id required")
-    private Long id;
-    private String name;
-    private String shortName;
-    private List<DayOfWeek> days;
-}
+     Long id,
+     String name,
+     String shortName,
+     Days days
+){}
