@@ -1,10 +1,10 @@
 package com.sarmich.timetable.mapper;
 
-import com.sarmich.timetable.lesson.*;
-import com.sarmich.timetable.subject.SubjectEntity;
-import com.sarmich.timetable.subject.SubjectRequest;
-import com.sarmich.timetable.subject.SubjectResponse;
-import com.sarmich.timetable.subject.SubjectUpdateRequest;
+import com.sarmich.timetable.domain.LessonEntity;
+import com.sarmich.timetable.model.request.LessonRequest;
+import com.sarmich.timetable.model.request.LessonUpdateRequest;
+import com.sarmich.timetable.model.response.LessonInfo;
+import com.sarmich.timetable.model.response.LessonResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;

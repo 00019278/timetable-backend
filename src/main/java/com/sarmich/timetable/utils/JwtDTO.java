@@ -1,7 +1,7 @@
 package com.sarmich.timetable.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.sarmich.timetable.profile.ProfileRole;
+import com.sarmich.timetable.domain.enums.ProfileRole;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

@@ -1,7 +1,7 @@
 package com.sarmich.timetable.utils;
 
 import com.sarmich.timetable.exp.exception.InvalidOperationException;
-import com.sarmich.timetable.profile.ProfileRole;
+import com.sarmich.timetable.domain.enums.ProfileRole;
 import io.jsonwebtoken.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;

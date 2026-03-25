@@ -30,6 +30,8 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt:0.9.1")
 	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
 	implementation("javax.xml.bind:jaxb-api:2.4.0-b180830.0359")
+// https://mvnrepository.com/artifact/com.google.ortools/ortools-java
+	implementation("com.google.ortools:ortools-java:9.9.3963")
 
 	implementation("org.mapstruct:mapstruct:1.5.3.Final")
 	annotationProcessor ("org.mapstruct:mapstruct-processor:1.5.3.Final")

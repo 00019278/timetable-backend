@@ -2,14 +2,15 @@ package com.sarmich.timetable.mapper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sarmich.timetable.classs.*;
+import com.sarmich.timetable.domain.ClassEntity;
+import com.sarmich.timetable.model.Days;
+import com.sarmich.timetable.model.request.ClassRequest;
+import com.sarmich.timetable.model.request.ClassUpdateRequest;
+import com.sarmich.timetable.model.response.ClassResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
-
-import java.time.DayOfWeek;
-import java.util.List;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = InstantMapper.class)
 public abstract class ClassMapper {

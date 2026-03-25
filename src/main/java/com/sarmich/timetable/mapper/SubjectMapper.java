@@ -1,9 +1,9 @@
 package com.sarmich.timetable.mapper;
 
-import com.sarmich.timetable.subject.SubjectEntity;
-import com.sarmich.timetable.subject.SubjectRequest;
-import com.sarmich.timetable.subject.SubjectResponse;
-import com.sarmich.timetable.subject.SubjectUpdateRequest;
+import com.sarmich.timetable.domain.SubjectEntity;
+import com.sarmich.timetable.model.request.SubjectRequest;
+import com.sarmich.timetable.model.response.SubjectResponse;
+import com.sarmich.timetable.model.request.SubjectUpdateRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;

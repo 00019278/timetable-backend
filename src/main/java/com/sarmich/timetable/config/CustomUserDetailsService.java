@@ -1,8 +1,8 @@
 package com.sarmich.timetable.config;
 
-import com.sarmich.timetable.profile.ProfileRepository;
+import com.sarmich.timetable.repository.ProfileRepository;
 import com.sarmich.timetable.utils.CustomUserDetails;
-import com.sarmich.timetable.utils.ProfileEntity;
+import com.sarmich.timetable.domain.ProfileEntity;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

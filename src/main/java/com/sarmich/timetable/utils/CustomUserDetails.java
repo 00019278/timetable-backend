@@ -1,5 +1,6 @@
 package com.sarmich.timetable.utils;
 
+import com.sarmich.timetable.domain.ProfileEntity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
