@@ -34,7 +34,7 @@ public class TeacherService {
     }
 
     public TeacherResponse update(TeacherUpdateRequest dto) {
-        TeacherEntity old = teacherRepository.findByIdAndDeletedFalse(dto.id());
+        TeacherEntity old = teacherRepository.findByIdAndProfileIdAndDeletedFalse(dto.id(), SpringSecurityUtil.getProfileId());
         if (old == null) {
             throw new NotFoundException("Teacher not found");
         }
@@ -50,14 +50,14 @@ public class TeacherService {
     }
 
     public void delete(Long id) {
-        TeacherEntity teacher = teacherRepository.findByIdAndDeletedFalse(id);
+        TeacherEntity teacher = teacherRepository.findByIdAndProfileIdAndDeletedFalse(id, SpringSecurityUtil.getProfileId());
         teacher.setDeleted(true);
         teacherRepository.save(teacher);
     }
 
     public TeacherResponse get(Long id) {
         return TeacherMapper.INSTANCE.toResponse(
-                teacherRepository.findByIdAndDeletedFalse(id), objectMapper);
+                teacherRepository.findByIdAndProfileIdAndDeletedFalse(id, SpringSecurityUtil.getProfileId()), objectMapper);
 
     }
 

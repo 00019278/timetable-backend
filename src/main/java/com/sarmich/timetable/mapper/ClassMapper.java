@@ -39,6 +39,9 @@ public abstract class ClassMapper {
     @Mapping(target = "days", source = "days")
     public abstract ClassResponse toResponse(ClassEntity classDto, Days days);
 
+    @Mapping(target = "days", ignore = true)
+    public abstract ClassResponse toResponse(ClassEntity classDto);
+
     public ClassResponse toResponse(ClassEntity entity, ObjectMapper objectMapper) {
         return toResponse(entity, objectMapper.convertValue(entity.getDays(), Days.class));
     }

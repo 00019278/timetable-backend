@@ -18,6 +18,8 @@ public abstract class TeacherMapper {
 
     @Mapping(target = "lessonTimes", source = "lessonTimes")
     public abstract TeacherResponse toResponse(TeacherEntity teacher, LessonTime lessonTimes);
+    @Mapping(target = "lessonTimes", ignore = true)
+    public abstract TeacherResponse toResponse(TeacherEntity teacher);
 
     public TeacherResponse toResponse(TeacherEntity teacher, ObjectMapper objectMapper) {
         return toResponse(teacher, objectMapper.convertValue(teacher.getLessonTimes(), LessonTime.class));
