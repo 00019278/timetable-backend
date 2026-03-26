@@ -4,24 +4,36 @@ import com.sarmich.timetable.google.or.models.Lesson;
 import com.sarmich.timetable.google.or.models.Subject;
 import com.sarmich.timetable.google.or.models.Teacher;
 
+import java.util.HashMap;
 import java.util.List;
 
 public class DemoData {
     public static List<Teacher> teacherList() {
-        return List.of(new Teacher(1, "Teacher ona tili"),
-                new Teacher(2, "Teacher rus tili"),
-                new Teacher(3, "Teacher ingliz tili"),
-                new Teacher(4, "Teacher matematika"),
-                new Teacher(5, "Teacher universal"),
-                new Teacher(6, "Teacher fizika"),
-                new Teacher(7, "Teacher kimyo"),
-                new Teacher(8, "Teacher biologiya"),
-                new Teacher(9, "Teacher tarbiya"),
-                new Teacher(10, "Teacher jismoniy tarbiya"),
-                new Teacher(11, "Teacher tarix"),
-                new Teacher(12, "Teacher chizmachilik"),
-                new Teacher(13, "Teacher informatika"),
-                new Teacher(13, "Teacher geografiya")
+        return List.of(
+                new Teacher(1, "Yusupov B"),
+                new Teacher(2, "Muhsinali "),
+                new Teacher(3, "Abdullayeva L"),
+                new Teacher(4, "Kenjayev I"),
+                new Teacher(5, "Ziyodullayev R"),
+                new Teacher(6, " Pirmatov U"),
+                new Teacher(7, "Dodojonov A"),
+                new Teacher(8, "Otajonov J"),
+                new Teacher(9, "Abduqodirov D"),
+                new Teacher(10, "Ostanaqulov N"),
+                new Teacher(11, "Ashurov N"),
+                new Teacher(12, "Abdullayev R"),
+                new Teacher(13, "Qo'ldoshev T"),
+                new Teacher(13, "Sultomurod aka"),
+                new Teacher(14, "Najmiddin aka"),
+                new Teacher(15, "Qayumov H"),
+                new Teacher(16, "Fayzullayev N"),
+                new Teacher(17, "Fayzullayev Sh"),
+                new Teacher(18, "Berdiyev B"),
+                new Teacher(19, "Po'latova Maqsuda"),
+                new Teacher(20, "Behruz"),
+                new Teacher(21, "Shavkat aka"),
+                new Teacher(22, "Habiba"),
+                new Teacher(23, "Yunusov H")
         );
     }
 
@@ -40,7 +52,8 @@ public class DemoData {
     }
 
     public static List<Subject> subjectList() {
-        return List.of(new Subject(1, "Ona tili"),
+        return List.of(
+                new Subject(1, "Ona tili"),
                 new Subject(2, "Rus tili"),
                 new Subject(3, "Ingliz tili"),
                 new Subject(4, "Algebra"),
@@ -57,23 +70,33 @@ public class DemoData {
                 new Subject(15, "Adabiyot"),
                 new Subject(16, "Tarbiya"),
                 new Subject(17, "Geometriya"),
-                new Subject(18, "Jahon tarixi")
+                new Subject(18, "Jahon tarixi"),
+                new Subject(19, "Chyot"),
+                new Subject(20, "Texnologiya"),
+                new Subject(21, "Musiqa"),
+                new Subject(22, "Tarbiya soat")
         );
     }
 
     public static List<Class> classList() {
         return List.of(new Class(1, "9-A"),
-                new Class(2, "2-A"),
-                new Class(3, "1-B"),
-                new Class(4, "2-B"),
-                new Class(5, "3-A"),
-                new Class(6, "3-B"),
-                new Class(7, "4-A"),
-                new Class(8, "4-B"));
+                new Class(2, "9-B"),
+                new Class(3, "9-C"),
+                new Class(4, "9-D"),
+                new Class(5, "9-E"),
+                new Class(6, "5-A"),
+                new Class(7, "5-B"),
+                new Class(8, "6-A"),
+                new Class(8, "6-B"),
+                new Class(8, "7-A"),
+                new Class(8, "7-B"),
+                new Class(8, "8-A"),
+                new Class(8, "8-B")
+        );
     }
 
     public static List<Lesson> lessonList() {
-        return List.of(
+        List<Lesson> lessons = new java.util.ArrayList<>(List.of(
                 new Lesson(1, 1, 11, 7, 1), // ozbekiston tarix
                 new Lesson(2, 1, 11, 18, 1), //jahon tarix
                 new Lesson(3, 1, 12, 11, 1),// chizmachilik
@@ -171,6 +194,86 @@ public class DemoData {
                 new Lesson(16, 2, 8, 10, 5), // biologiya
                 new Lesson(17, 2, 4, 4, 5), // algebra
                 new Lesson(18, 1, 4, 17, 5) // geometriya
+
+
+        ));
+        lessons.addAll(lesson5());
+        lessons.addAll(lesson6());
+        return lessons;
+    }
+
+    public static List<Lesson> lesson5() {
+        return List.of(
+                new Lesson(1, 2, 2, 2, 6), // ozbekiston tarix
+                new Lesson(1, 2, 1, 1, 6), // ona tili
+                new Lesson(1, 2, 10, 12, 6), // jismoniy tarbiya
+                new Lesson(1, 2, 8, 10, 6),// biologiya
+                new Lesson(1, 1, 9, 16, 6),// tarbiya
+                new Lesson(1, 2, 12, 17, 6),// geografiya
+                new Lesson(1, 2, 3, 3, 6),// inglish
+                new Lesson(1, 2, 21, 20, 6),// texnologiya
+                new Lesson(1, 2, 17, 18, 6),// tarix
+                new Lesson(1, 2, 4, 4, 6),// matematika
+                new Lesson(1, 2, 1, 15, 6),// adabiyot
+                new Lesson(1, 2, 13, 9, 6),// informatika
+                new Lesson(1, 2, 15, 21, 6)// musiqa
+                ,
+                new Lesson(1, 2, 2, 2, 7), // ozbekiston tarix
+                new Lesson(1, 2, 1, 1, 7), // ona tili
+                new Lesson(1, 2, 10, 12, 7), // jismoniy tarbiya
+                new Lesson(1, 2, 8, 10, 7),// biologiya
+                new Lesson(1, 1, 9, 16, 7),// tarbiya
+                new Lesson(1, 2, 12, 17, 7),// geografiya
+                new Lesson(1, 2, 3, 3, 7),// inglish
+                new Lesson(1, 2, 21, 20, 7),// texnologiya
+                new Lesson(1, 2, 17, 18, 7),// tarix
+                new Lesson(1, 2, 4, 4, 7),// matematika
+                new Lesson(1, 2, 1, 15, 7),// adabiyot
+                new Lesson(1, 2, 13, 9, 7),// informatika
+                new Lesson(1, 2, 15, 21, 7)// musiqa
         );
+    }
+
+    public static List<Lesson> lesson6() {
+        return List.of(
+                new Lesson(1, 2, 2, 2, 8), // ozbekiston tarix
+                new Lesson(1, 2, 1, 1, 8), // ona tili
+                new Lesson(1, 2, 10, 12, 8), // jismoniy tarbiya
+                new Lesson(1, 2, 8, 10, 8),// biologiya
+                new Lesson(1, 1, 9, 16, 8),// tarbiya
+                new Lesson(1, 2, 12, 17, 8),// geografiya
+                new Lesson(1, 2, 3, 3, 8),// inglish
+                new Lesson(1, 2, 21, 20, 8),// texnologiya
+                new Lesson(1, 2, 17, 18, 8),// tarix
+                new Lesson(1, 2, 4, 4, 8),// matematika
+                new Lesson(1, 2, 1, 15, 8),// adabiyot
+                new Lesson(1, 2, 13, 9, 8),// informatika
+                new Lesson(1, 2, 15, 21, 8),// musiqa
+
+
+                new Lesson(1, 2, 2, 2, 9), // ozbekiston tarix
+                new Lesson(1, 2, 1, 1, 9), // ona tili
+                new Lesson(1, 2, 10, 12, 9), // jismoniy tarbiya
+                new Lesson(1, 2, 9, 10, 9),// biologiya
+                new Lesson(1, 1, 8, 16, 9),// tarbiya
+                new Lesson(1, 2, 12, 17, 9),// geografiya
+                new Lesson(1, 2, 3, 3, 9),// inglish
+                new Lesson(1, 2, 21, 20, 9),// texnologiya
+                new Lesson(1, 2, 17, 18, 9),// tarix
+                new Lesson(1, 2, 4, 4, 9),// matematika
+                new Lesson(1, 2, 1, 15, 9),// adabiyot
+                new Lesson(1, 2, 13, 9, 9),// informatika
+                new Lesson(1, 2, 15, 21, 9)// musiqa
+        );
+    }
+    public static HashMap<Integer, Subject> getSubjectMap(){
+        HashMap<Integer,Subject> map = new HashMap<>();
+        subjectList().forEach(s->map.put(s.getId(),s));
+        return map;
+    }
+    public static HashMap<Integer, Teacher> getTeacherMap(){
+        HashMap<Integer,Teacher> map = new HashMap<>();
+        teacherList().forEach(s->map.put(s.getId(),s));
+        return map;
     }
 }

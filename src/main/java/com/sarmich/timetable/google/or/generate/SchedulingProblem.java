@@ -3,14 +3,8 @@ package com.sarmich.timetable.google.or.generate;
 import com.google.ortools.Loader;
 import com.google.ortools.sat.*;
 import com.sarmich.timetable.google.or.models.Lesson;
-import lombok.Getter;
-
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import com.google.ortools.Loader;
-import com.google.ortools.sat.*;
+import com.sarmich.timetable.google.or.models.Subject;
+import com.sarmich.timetable.google.or.models.Teacher;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -39,7 +33,7 @@ public class SchedulingProblem {
         CpModel model = new CpModel();
 
         int numTeachers = teachers.size();
-        int numRooms = 30;
+        int numRooms = 50;
         int numCourses = courses.size();
         List<Integer> numHoursList = List.of(
                 1000, 1001, 1002, 1003, 1004, 1005,
@@ -190,7 +184,7 @@ public class SchedulingProblem {
         CpSolver solver = new CpSolver();
         solver.getParameters().setEnumerateAllSolutions(true);
 
-        VarArraySolutionPrinter cb = new VarArraySolutionPrinter(timetable, courses, map, teachers, numHoursList);
+        VarArraySolutionPrinter cb = new VarArraySolutionPrinter(timetable, courses, map, teachers, numHoursList, DemoData.getTeacherMap(), DemoData.getSubjectMap());
         solver.solve(model, cb);
 
         System.out.println("\nStatistics");
@@ -219,14 +213,18 @@ public class SchedulingProblem {
         private final List<Integer> teachers;
         private final List<Integer> numHoursList;
         private int solutionCount;
+        final HashMap<Integer, Teacher> teacherMap;
+        final HashMap<Integer, Subject> subjectMap;
 
-        public VarArraySolutionPrinter(BoolVar[][][][] timetable, List<Integer> courses, Map<Integer, Integer> map, List<Integer> teachers, List<Integer> numHoursList) {
+        public VarArraySolutionPrinter(BoolVar[][][][] timetable, List<Integer> courses, Map<Integer, Integer> map, List<Integer> teachers, List<Integer> numHoursList, final HashMap<Integer, Teacher> teacherMap, final HashMap<Integer, Subject> subjectMap) {
             this.solutionCount = 0;
             this.timetable = timetable;
             this.courses = courses;
             this.map = map;
             this.teachers = teachers;
             this.numHoursList = numHoursList;
+            this.teacherMap = teacherMap;
+            this.subjectMap = subjectMap;
         }
 
         @Override
@@ -245,12 +243,13 @@ public class SchedulingProblem {
                     }
                     for (int r = 0; r < timetable[0][0].length; r++) {
                         if (booleanValue(timetable[h][c][r][teacherId])) {
+
                             System.out.println("Hour: " + numHoursList.get(h) +
                                     ", course: " + courses.get(c) +
                                     ", Class: " + extractClassId(courses.get(c)) +
-                                    ", Subject: " + extractSubjectId(courses.get(c)) +
+                                    ", Subject: " + subjectMap.getOrDefault(extractSubjectId(courses.get(c)), null).getName() +
                                     ", Room: " + r +
-                                    ", Teacher: " + teachers.get(teacherId));
+                                    ", Teacher: " + teacherMap.getOrDefault(teachers.get(teacherId), null).getName());
                         }
                     }
                 }
