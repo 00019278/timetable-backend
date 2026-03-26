@@ -61,6 +61,7 @@ public class SchedulingProblem {
             }
         }
 
+        // Teacher constraints: A teacher can only be in one room at one hour
         for (int t = 0; t < numTeachers; t++) {
             for (int h = 0; h < numHoursList.size(); h++) {
                 ArrayList<Literal> boolVars = new ArrayList<>();
@@ -82,6 +83,7 @@ public class SchedulingProblem {
             }
         }
 
+        // Room constraints: A room can only be used by one teacher at one hour
         for (int r = 0; r < numRooms; r++) {
             for (int h = 0; h < numHoursList.size(); h++) {
                 ArrayList<Literal> boolVars = new ArrayList<>();
@@ -103,6 +105,7 @@ public class SchedulingProblem {
             }
         }
 
+        // Class constraints: A class can only be in one room at one hour
         for (int c = 0; c < numCourses; c++) {
             for (int h = 0; h < numHoursList.size(); h++) {
                 ArrayList<Literal> boolVars = new ArrayList<>();
@@ -141,26 +144,11 @@ public class SchedulingProblem {
                 model.addAtMostOne(boolVars.toArray(new Literal[0]));
             }
         }
+        // Priority constraints: List to hold violation indicators
+        List<BoolVar> highPriorityViolations = new ArrayList<>();
+        List<BoolVar> middlePriorityViolations = new ArrayList<>();
 
-        for (int c = 0; c < numCourses; c++) {
-            ArrayList<Literal> boolVars = new ArrayList<>();
-            int courseId = courses.get(c);
-            int teacherId = map.get(courseId);
-            for (int i = 0; i < teachers.size(); i++) {
-                if (teachers.get(i) == teacherId) {
-                    teacherId = i;
-                    break;
-                }
-            }
-            for (int h = 0; h < numHoursList.size(); h++) {
-                for (int r = 0; r < numRooms; r++) {
-                    boolVars.add(timetable[h][c][r][teacherId]);
-                }
-            }
-            model.addAtLeastOne(boolVars.toArray(new Literal[0]));
-        }
-
-        // New constraint: Ensure each course is scheduled the required number of times per week
+        // High priority constraint: Consecutive classes for each course
         for (int c = 0; c < numCourses; c++) {
             int courseId = courses.get(c);
             int teacherId = map.get(courseId);
@@ -171,14 +159,62 @@ public class SchedulingProblem {
                 }
             }
             int requiredCount = lessons.stream().filter(l -> combineIds(l.getSubjectId(), l.getClassId()) == courseId).findFirst().get().getCount();
-            ArrayList<Literal> boolVars = new ArrayList<>();
-            for (int h = 0; h < numHoursList.size(); h++) {
-                for (int r = 0; r < numRooms; r++) {
-                    boolVars.add(timetable[h][c][r][teacherId]);
+            for (int r = 0; r < numRooms; r++) {
+                for (int startHour = 0; startHour < numHoursList.size() - requiredCount + 1; startHour++) {
+                    BoolVar consecutiveViolation = model.newBoolVar("consecutiveViolation_" + c + "_" + startHour);
+                    ArrayList<Literal> consecutiveVars = new ArrayList<>();
+                    for (int h = startHour; h < startHour + requiredCount; h++) {
+                        consecutiveVars.add(timetable[h][c][r][teacherId]);
+                    }
+                    // Ensure that if the class starts at startHour, it continues for requiredCount consecutive hours
+                    for (int h = startHour; h < startHour + requiredCount - 1; h++) {
+                        model.addImplication(timetable[startHour][c][r][teacherId], timetable[h + 1][c][r][teacherId]);
+                    }
+                    // Add the violation variable
+                    model.addBoolOr(consecutiveVars.toArray(new Literal[0])).onlyEnforceIf(consecutiveViolation.not());
+                    highPriorityViolations.add(consecutiveViolation);
                 }
             }
-            model.addEquality(LinearExpr.sum(boolVars.toArray(new Literal[0])), requiredCount);
         }
+
+        // Middle priority constraint: Consecutive classes for each teacher
+        for (int t = 0; t < numTeachers; t++) {
+            int finalT = teachers.get(t);
+            List<Integer> teacherCourses = lessons.stream().filter(l -> l.getTeacherId() == finalT).map(l -> combineIds(l.getSubjectId(), l.getClassId())).toList();
+            for (int r = 0; r < numRooms; r++) {
+                for (int h = 0; h < numHoursList.size(); h++) {
+                    for (Integer teacherCourse : teacherCourses) {
+                        int index = -1;
+                        for (int i = 0; i < courses.size(); i++) {
+                            if (Objects.equals(courses.get(i), teacherCourse)) {
+                                index = i;
+                                break;
+                            }
+                        }
+                        BoolVar middleViolation = model.newBoolVar("middleViolation_" + t + "_" + h + "_" + r);
+                        // Impose consecutive constraint for teachers
+                        if (h > 0) {
+                            model.addImplication(timetable[h - 1][index][r][t], timetable[h][index][r][t]);
+                            model.addImplication(timetable[h][index][r][t], timetable[h - 1][index][r][t]);
+                        }
+                        middlePriorityViolations.add(middleViolation);
+                    }
+                }
+            }
+        }
+
+        // Objective: Minimize the weighted sum of violation variables
+        int highPriorityWeight = 10;
+        int middlePriorityWeight = 5;
+
+        LinearExpr highPrioritySum = LinearExpr.sum(highPriorityViolations.toArray(new Literal[0]));
+        LinearExpr middlePrioritySum = LinearExpr.sum(middlePriorityViolations.toArray(new Literal[0]));
+
+        model.minimize(LinearExpr.sum(
+                new LinearExpr[]{
+                        LinearExpr.term(highPrioritySum, highPriorityWeight),
+                        LinearExpr.term(middlePrioritySum, middlePriorityWeight)
+                }));
 
         System.out.println("Start Solving: " + LocalDateTime.now());
         CpSolver solver = new CpSolver();
@@ -191,7 +227,7 @@ public class SchedulingProblem {
         System.out.println("  - conflicts      : " + solver.numConflicts());
         System.out.println("  - branches       : " + solver.numBranches());
         System.out.println("  - wall time      : " + solver.wallTime() + " s");
-//        System.out.println("  - solutions found: " + cb.getSolutionCount());
+        System.out.println("  - solutions found: " + cb.getSolutionCount());
     }
 
     public static int combineIds(int subjectId, int classId) {
@@ -243,7 +279,6 @@ public class SchedulingProblem {
                     }
                     for (int r = 0; r < timetable[0][0].length; r++) {
                         if (booleanValue(timetable[h][c][r][teacherId])) {
-
                             System.out.println("Hour: " + numHoursList.get(h) +
                                     ", course: " + courses.get(c) +
                                     ", Class: " + extractClassId(courses.get(c)) +
@@ -255,7 +290,9 @@ public class SchedulingProblem {
                 }
             }
         }
+
+        public int getSolutionCount() {
+            return solutionCount;
+        }
     }
 }
-
-
