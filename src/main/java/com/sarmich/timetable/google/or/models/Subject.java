@@ -6,6 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Subject {
+    public Subject() {
+    }
+
     Integer id;
     String name;
     Integer priority;

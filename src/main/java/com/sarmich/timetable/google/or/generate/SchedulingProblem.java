@@ -5,13 +5,16 @@ import com.google.ortools.sat.*;
 import com.sarmich.timetable.google.or.models.Lesson;
 import com.sarmich.timetable.google.or.models.Subject;
 import com.sarmich.timetable.google.or.models.Teacher;
+import lombok.Getter;
 
+import java.io.IOException;
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class SchedulingProblem {
-    public static void generate(List<Lesson> lessons) {
+    public List<Response> generate(List<Lesson> lessons) {
         System.out.println("Start : " + LocalDateTime.now());
 
         HashMap<Integer, Integer> map = new HashMap<>();
@@ -50,32 +53,24 @@ public class SchedulingProblem {
                 for (int r = 0; r < numRooms; r++) {
                     int courseId = courses.get(c);
                     int teacherId = map.get(courseId);
-                    for (int i = 0; i < teachers.size(); i++) {
-                        if (teachers.get(i) == teacherId) {
-                            teacherId = i;
-                            break;
-                        }
-                    }
+                    teacherId = teachers.indexOf(teacherId);
                     timetable[h][c][r][teacherId] = model.newBoolVar("h" + h + "_c" + c + "_r" + r + "_t" + teacherId);
                 }
             }
         }
 
-        // Teacher constraints: A teacher can only be in one room at one hour
+        // Ensure no teacher is scheduled in more than one room at the same time
         for (int t = 0; t < numTeachers; t++) {
             for (int h = 0; h < numHoursList.size(); h++) {
                 ArrayList<Literal> boolVars = new ArrayList<>();
                 for (int r = 0; r < numRooms; r++) {
                     int finalT = teachers.get(t);
-                    List<Integer> teacherCourses = lessons.stream().filter(l -> l.getTeacherId() == finalT).map(l -> combineIds(l.getSubjectId(), l.getClassId())).toList();
+                    List<Integer> teacherCourses = lessons.stream()
+                            .filter(l -> l.getTeacherId() == finalT)
+                            .map(l -> combineIds(l.getSubjectId(), l.getClassId()))
+                            .toList();
                     for (Integer teacherCourse : teacherCourses) {
-                        int index = -1;
-                        for (int i = 0; i < courses.size(); i++) {
-                            if (Objects.equals(courses.get(i), teacherCourse)) {
-                                index = i;
-                                break;
-                            }
-                        }
+                        int index = courses.indexOf(teacherCourse);
                         boolVars.add(timetable[h][index][r][t]);
                     }
                 }
@@ -83,21 +78,18 @@ public class SchedulingProblem {
             }
         }
 
-        // Room constraints: A room can only be used by one teacher at one hour
+        // Ensure no room is used by more than one course at the same time
         for (int r = 0; r < numRooms; r++) {
             for (int h = 0; h < numHoursList.size(); h++) {
                 ArrayList<Literal> boolVars = new ArrayList<>();
                 for (int t = 0; t < numTeachers; t++) {
                     int finalT = teachers.get(t);
-                    List<Integer> teacherCourses = lessons.stream().filter(l -> l.getTeacherId() == finalT).map(l -> combineIds(l.getSubjectId(), l.getClassId())).toList();
+                    List<Integer> teacherCourses = lessons.stream()
+                            .filter(l -> l.getTeacherId() == finalT)
+                            .map(l -> combineIds(l.getSubjectId(), l.getClassId()))
+                            .toList();
                     for (Integer teacherCourse : teacherCourses) {
-                        int index = -1;
-                        for (int i = 0; i < courses.size(); i++) {
-                            if (Objects.equals(courses.get(i), teacherCourse)) {
-                                index = i;
-                                break;
-                            }
-                        }
+                        int index = courses.indexOf(teacherCourse);
                         boolVars.add(timetable[h][index][r][t]);
                     }
                 }
@@ -105,18 +97,13 @@ public class SchedulingProblem {
             }
         }
 
-        // Class constraints: A class can only be in one room at one hour
+        // Ensure no course is scheduled more than once at the same time
         for (int c = 0; c < numCourses; c++) {
             for (int h = 0; h < numHoursList.size(); h++) {
                 ArrayList<Literal> boolVars = new ArrayList<>();
                 int courseId = courses.get(c);
                 int teacherId = map.get(courseId);
-                for (int i = 0; i < teachers.size(); i++) {
-                    if (teachers.get(i) == teacherId) {
-                        teacherId = i;
-                        break;
-                    }
-                }
+                teacherId = teachers.indexOf(teacherId);
                 for (int r = 0; r < numRooms; r++) {
                     boolVars.add(timetable[h][c][r][teacherId]);
                 }
@@ -124,19 +111,15 @@ public class SchedulingProblem {
             }
         }
 
+        // Ensure no class has more than one course at the same time
         for (int h = 0; h < numHoursList.size(); h++) {
             Map<Integer, ArrayList<Literal>> classBoolVarsMap = new HashMap<>();
             for (int c = 0; c < numCourses; c++) {
                 int classId = extractClassId(courses.get(c));
                 classBoolVarsMap.putIfAbsent(classId, new ArrayList<>());
+                int teacherId = map.get(courses.get(c));
+                teacherId = teachers.indexOf(teacherId);
                 for (int r = 0; r < numRooms; r++) {
-                    int teacherId = map.get(courses.get(c));
-                    for (int i = 0; i < teachers.size(); i++) {
-                        if (teachers.get(i) == teacherId) {
-                            teacherId = i;
-                            break;
-                        }
-                    }
                     classBoolVarsMap.get(classId).add(timetable[h][c][r][teacherId]);
                 }
             }
@@ -144,90 +127,92 @@ public class SchedulingProblem {
                 model.addAtMostOne(boolVars.toArray(new Literal[0]));
             }
         }
-        // Priority constraints: List to hold violation indicators
-        List<BoolVar> highPriorityViolations = new ArrayList<>();
-        List<BoolVar> middlePriorityViolations = new ArrayList<>();
 
-        // High priority constraint: Consecutive classes for each course
+        // Ensure each course is scheduled the required number of times per week
         for (int c = 0; c < numCourses; c++) {
             int courseId = courses.get(c);
             int teacherId = map.get(courseId);
-            for (int i = 0; i < teachers.size(); i++) {
-                if (teachers.get(i) == teacherId) {
-                    teacherId = i;
-                    break;
+            teacherId = teachers.indexOf(teacherId);
+            int requiredCount = lessons.stream()
+                    .filter(l -> combineIds(l.getSubjectId(), l.getClassId()) == courseId)
+                    .findFirst()
+                    .get()
+                    .getCount();
+            ArrayList<Literal> boolVars = new ArrayList<>();
+            for (int h = 0; h < numHoursList.size(); h++) {
+                for (int r = 0; r < numRooms; r++) {
+                    boolVars.add(timetable[h][c][r][teacherId]);
                 }
             }
-            int requiredCount = lessons.stream().filter(l -> combineIds(l.getSubjectId(), l.getClassId()) == courseId).findFirst().get().getCount();
-            for (int r = 0; r < numRooms; r++) {
-                for (int startHour = 0; startHour < numHoursList.size() - requiredCount + 1; startHour++) {
-                    BoolVar consecutiveViolation = model.newBoolVar("consecutiveViolation_" + c + "_" + startHour);
-                    ArrayList<Literal> consecutiveVars = new ArrayList<>();
-                    for (int h = startHour; h < startHour + requiredCount; h++) {
-                        consecutiveVars.add(timetable[h][c][r][teacherId]);
-                    }
-                    // Ensure that if the class starts at startHour, it continues for requiredCount consecutive hours
-                    for (int h = startHour; h < startHour + requiredCount - 1; h++) {
-                        model.addImplication(timetable[startHour][c][r][teacherId], timetable[h + 1][c][r][teacherId]);
-                    }
-                    // Add the violation variable
-                    model.addBoolOr(consecutiveVars.toArray(new Literal[0])).onlyEnforceIf(consecutiveViolation.not());
-                    highPriorityViolations.add(consecutiveViolation);
-                }
-            }
+            model.addEquality(LinearExpr.sum(boolVars.toArray(new Literal[0])), requiredCount);
         }
 
-        // Middle priority constraint: Consecutive classes for each teacher
-        for (int t = 0; t < numTeachers; t++) {
-            int finalT = teachers.get(t);
-            List<Integer> teacherCourses = lessons.stream().filter(l -> l.getTeacherId() == finalT).map(l -> combineIds(l.getSubjectId(), l.getClassId())).toList();
-            for (int r = 0; r < numRooms; r++) {
-                for (int h = 0; h < numHoursList.size(); h++) {
-                    for (Integer teacherCourse : teacherCourses) {
-                        int index = -1;
-                        for (int i = 0; i < courses.size(); i++) {
-                            if (Objects.equals(courses.get(i), teacherCourse)) {
-                                index = i;
-                                break;
-                            }
-                        }
-                        BoolVar middleViolation = model.newBoolVar("middleViolation_" + t + "_" + h + "_" + r);
-                        // Impose consecutive constraint for teachers
-                        if (h > 0) {
-                            model.addImplication(timetable[h - 1][index][r][t], timetable[h][index][r][t]);
-                            model.addImplication(timetable[h][index][r][t], timetable[h - 1][index][r][t]);
-                        }
-                        middlePriorityViolations.add(middleViolation);
+        // Ensure each course is not scheduled more than once per day
+        int daysInWeek = 5; // Assuming a 5-day week
+        int hoursPerDay = numHoursList.size() / daysInWeek;
+
+        for (int c = 0; c < numCourses; c++) {
+            for (int d = 0; d < daysInWeek; d++) {
+                ArrayList<Literal> dailyVars = new ArrayList<>();
+                for (int h = 0; h < hoursPerDay; h++) {
+                    int globalHourIndex = d * hoursPerDay + h;
+                    int courseId = courses.get(c);
+                    int teacherId = map.get(courseId);
+                    teacherId = teachers.indexOf(teacherId);
+                    for (int r = 0; r < numRooms; r++) {
+                        dailyVars.add(timetable[globalHourIndex][c][r][teacherId]);
                     }
                 }
+                model.addAtMostOne(dailyVars.toArray(new Literal[0]));
             }
         }
-
-        // Objective: Minimize the weighted sum of violation variables
-        int highPriorityWeight = 10;
-        int middlePriorityWeight = 5;
-
-        LinearExpr highPrioritySum = LinearExpr.sum(highPriorityViolations.toArray(new Literal[0]));
-        LinearExpr middlePrioritySum = LinearExpr.sum(middlePriorityViolations.toArray(new Literal[0]));
-
-        model.minimize(LinearExpr.sum(
-                new LinearExpr[]{
-                        LinearExpr.term(highPrioritySum, highPriorityWeight),
-                        LinearExpr.term(middlePrioritySum, middlePriorityWeight)
-                }));
 
         System.out.println("Start Solving: " + LocalDateTime.now());
         CpSolver solver = new CpSolver();
-        solver.getParameters().setEnumerateAllSolutions(true);
+        CpSolverStatus status = solver.solve(model);
+        HashMap<Integer, Teacher> teacherMap = DemoData.getTeacherMap();
+        HashMap<Integer, Subject> subjectMap = DemoData.getSubjectMap();
+        HashMap<Integer, Class> classHashMap = DemoData.getClassMap();
 
-        VarArraySolutionPrinter cb = new VarArraySolutionPrinter(timetable, courses, map, teachers, numHoursList, DemoData.getTeacherMap(), DemoData.getSubjectMap());
-        solver.solve(model, cb);
+        if (status == CpSolverStatus.OPTIMAL || status == CpSolverStatus.FEASIBLE) {
+            System.out.println("Solution " + "solutionCount" + ":");
+            List<Response> timetables = new ArrayList<>();
 
-        System.out.println("\nStatistics");
-        System.out.println("  - conflicts      : " + solver.numConflicts());
-        System.out.println("  - branches       : " + solver.numBranches());
-        System.out.println("  - wall time      : " + solver.wallTime() + " s");
-        System.out.println("  - solutions found: " + cb.getSolutionCount());
+            for (int h = 0; h < numHoursList.size(); h++) {
+                for (int c = 0; c < courses.size(); c++) {
+                    int courseId = courses.get(c);
+                    int teacherId = map.get(courseId);
+                    teacherId = teachers.indexOf(teacherId);
+                    for (int r = 0; r < timetable[0][0].length; r++) {
+                        if (timetable[h][c][r] != null && solver.booleanValue(timetable[h][c][r][teacherId])) {
+                            timetables.add(new Response(
+                                    DayOfWeek.of(numHoursList.get(h) / 1000),
+                                    numHoursList.get(h) % 1000,
+                                    teacherMap.get(teachers.get(teacherId)),
+                                    subjectMap.get(extractSubjectId(courses.get(c))),
+                                    classHashMap.get(extractClassId(courses.get(c)))
+                            ));
+                            System.out.println("Hour: " + numHoursList.get(h) +
+                                    ", course: " + courses.get(c) +
+                                    ", Class: " + extractClassId(courses.get(c)) +
+                                    ", Subject: " + subjectMap.getOrDefault(extractSubjectId(courses.get(c)), null).getName() +
+                                    ", Room: " + r +
+                                    ", Teacher: " + teacherMap.getOrDefault(teachers.get(teacherId), null).getName());
+                        }
+                    }
+                }
+            }
+
+            System.out.println("\nStatistics");
+            System.out.println("  - conflicts      : " + solver.numConflicts());
+            System.out.println("  - branches       : " + solver.numBranches());
+            System.out.println("  - wall time      : " + solver.wallTime() + " s");
+            return timetables;
+        }
+
+        return null;
+
+
     }
 
     public static int combineIds(int subjectId, int classId) {
@@ -248,9 +233,11 @@ public class SchedulingProblem {
         private final Map<Integer, Integer> map;
         private final List<Integer> teachers;
         private final List<Integer> numHoursList;
+        @Getter
         private int solutionCount;
         final HashMap<Integer, Teacher> teacherMap;
         final HashMap<Integer, Subject> subjectMap;
+        final HashMap<Integer, Class> classHashMap;
 
         public VarArraySolutionPrinter(BoolVar[][][][] timetable, List<Integer> courses, Map<Integer, Integer> map, List<Integer> teachers, List<Integer> numHoursList, final HashMap<Integer, Teacher> teacherMap, final HashMap<Integer, Subject> subjectMap) {
             this.solutionCount = 0;
@@ -261,12 +248,15 @@ public class SchedulingProblem {
             this.numHoursList = numHoursList;
             this.teacherMap = teacherMap;
             this.subjectMap = subjectMap;
+            this.classHashMap = DemoData.getClassMap();
         }
 
         @Override
         public void onSolutionCallback() {
             solutionCount++;
             System.out.println("Solution " + solutionCount + ":");
+            List<Response> timetables = new ArrayList<>();
+
             for (int h = 0; h < numHoursList.size(); h++) {
                 for (int c = 0; c < courses.size(); c++) {
                     int courseId = courses.get(c);
@@ -278,7 +268,14 @@ public class SchedulingProblem {
                         }
                     }
                     for (int r = 0; r < timetable[0][0].length; r++) {
-                        if (booleanValue(timetable[h][c][r][teacherId])) {
+                        if (timetable[h][c][r] != null && booleanValue(timetable[h][c][r][teacherId])) {
+                            timetables.add(new Response(
+                                    DayOfWeek.of(numHoursList.get(h) / 1000),
+                                    numHoursList.get(h) % 1000,
+                                    teacherMap.get(teachers.get(teacherId)),
+                                    subjectMap.get(extractSubjectId(courses.get(c))),
+                                    classHashMap.get(extractClassId(courses.get(c)))
+                            ));
                             System.out.println("Hour: " + numHoursList.get(h) +
                                     ", course: " + courses.get(c) +
                                     ", Class: " + extractClassId(courses.get(c)) +
@@ -289,10 +286,13 @@ public class SchedulingProblem {
                     }
                 }
             }
+            Writer.writer(timetables);
         }
 
-        public int getSolutionCount() {
-            return solutionCount;
+        private boolean booleanValue(BoolVar var) {
+            return this.value(var) == 1;
         }
     }
 }
+
+

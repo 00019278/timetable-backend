@@ -10,6 +10,9 @@ public class Teacher {
     Integer id;
     String name;
 
+    public Teacher() {
+    }
+
     public Teacher(final Integer id, final String name) {
         this.id = id;
         this.name = name;

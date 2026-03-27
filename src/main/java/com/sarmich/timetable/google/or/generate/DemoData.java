@@ -87,11 +87,7 @@ public class DemoData {
                 new Class(6, "5-A"),
                 new Class(7, "5-B"),
                 new Class(8, "6-A"),
-                new Class(8, "6-B"),
-                new Class(8, "7-A"),
-                new Class(8, "7-B"),
-                new Class(8, "8-A"),
-                new Class(8, "8-B")
+                new Class(9, "6-B")
         );
     }
 
@@ -274,6 +270,11 @@ public class DemoData {
     public static HashMap<Integer, Teacher> getTeacherMap(){
         HashMap<Integer,Teacher> map = new HashMap<>();
         teacherList().forEach(s->map.put(s.getId(),s));
+        return map;
+    }
+    public static HashMap<Integer, Class> getClassMap(){
+        HashMap<Integer,Class> map = new HashMap<>();
+        classList().forEach(s->map.put(s.getId(),s));
         return map;
     }
 }
