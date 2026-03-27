@@ -1,12 +1,15 @@
 package com.sarmich.timetable.google.or.models;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Class {
-    Integer id;
-
-    public Class(final Integer id, final String name) {
-        this.id = id;
-        this.name = name;
-    }
-
-    String name;
+  Integer id;
+  String name;
 }

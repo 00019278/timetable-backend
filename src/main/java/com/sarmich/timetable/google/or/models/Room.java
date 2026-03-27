@@ -9,8 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Subject {
+public class Room {
   Integer id;
   String name;
-//  Integer priority;
 }

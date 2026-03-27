@@ -5,12 +5,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.DayOfWeek;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Subject {
-  Integer id;
-  String name;
-//  Integer priority;
+public class Response {
+  DayOfWeek day;
+  Integer hour;
+  Teacher teacher;
+  Subject subject;
+  Class classObj;
+  Integer roomId;
 }

@@ -1,4 +1,4 @@
-package com.sarmich.timetable.google.or;
+package com.sarmich.timetable.google.or.example;
 
 public class ClassGenerator {
     Integer id;

@@ -1,4 +1,4 @@
-package com.sarmich.timetable.google.or;
+package com.sarmich.timetable.google.or.example;
 
 import com.google.ortools.Loader;
 import com.google.ortools.sat.*;
