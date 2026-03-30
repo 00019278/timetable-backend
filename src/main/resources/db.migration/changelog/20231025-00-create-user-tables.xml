@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+    <changeSet id="create-tables" author="00019278">
+        <sql>
+            CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+            CREATE TABLE IF NOT EXISTS users (
+               id SERIAL PRIMARY KEY,
+              name VARCHAR(255),
+              surname VARCHAR(255),
+              email VARCHAR(255) UNIQUE,
+              phone VARCHAR(50),
+              photo TEXT,
+              password TEXT,
+              role VARCHAR(50) DEFAULT 'ROLE_USER',
+              created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+              updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+              deleted BOOLEAN DEFAULT FALSE
+              );
+
+
+            CREATE TABLE IF NOT EXISTS teacher (
+              id SERIAL PRIMARY KEY,
+              org_id INTEGER,
+              full_name VARCHAR(255),
+              short_name VARCHAR(100),
+              availabilities JSONB,
+              subjects JSONB,
+              deleted BOOLEAN DEFAULT FALSE,
+              created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+              updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+              );
+            CREATE TABLE IF NOT EXISTS subject (
+              id SERIAL PRIMARY KEY,
+              org_id INTEGER,
+              name VARCHAR(255),
+              short_name VARCHAR(100),
+              availabilities JSONB,
+              deleted BOOLEAN DEFAULT FALSE,
+              created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+              updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+              );
+
+            CREATE TABLE IF NOT EXISTS room (
+              id SERIAL PRIMARY KEY,
+              org_id INTEGER,
+              name VARCHAR(255),
+              short_name VARCHAR(100),
+              availabilities JSONB,
+              created_by INTEGER,
+              deleted BOOLEAN DEFAULT FALSE,
+              created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+              updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+              );
+
+            CREATE TABLE IF NOT EXISTS lesson (
+              id SERIAL PRIMARY KEY,
+              org_id INTEGER,
+              subject_id INTEGER,
+              teacher_id INTEGER,
+              class_id INTEGER,
+              room_ids JSONB,
+              period INTEGER,
+              lesson_count INTEGER,
+              day_of_week VARCHAR(20),
+              hour INTEGER,
+              deleted BOOLEAN DEFAULT FALSE,
+              created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+              updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+              );
+
+            CREATE TABLE IF NOT EXISTS organization (
+              id SERIAL PRIMARY KEY,
+              name VARCHAR(255) NOT NULL,
+              description TEXT,
+              days_of_week JSONB,
+              periods JSONB,
+              created_by INTEGER,
+              created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+              last_modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+              );
+
+
+            CREATE TABLE IF NOT EXISTS classes (
+              id SERIAL PRIMARY KEY,
+              org_id INTEGER,
+              name VARCHAR(255),
+              short_name VARCHAR(100),
+              availabilities JSONB,
+              created_by INTEGER,
+              deleted BOOLEAN DEFAULT FALSE,
+              created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+              updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+              );
+
+
+
+
+        </sql>
+    </changeSet>
+</databaseChangeLog>

@@ -6,6 +6,6 @@ import com.sarmich.timetable.model.LessonTime;
 public record TeacherRequest (
      String firstName,
      String lastName,
-     Long subjectId,
+     Integer subjectId,
      LessonTime lessonTimes
 ){}

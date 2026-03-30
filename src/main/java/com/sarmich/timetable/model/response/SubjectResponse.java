@@ -1,9 +1,13 @@
 package com.sarmich.timetable.model.response;
 
-public record SubjectResponse (
+import com.sarmich.timetable.model.TimeSlot;
 
-     Long id,
-     String shortName,
-     String name,
-     Integer priority
-){}
+import java.util.List;
+
+public record SubjectResponse(
+    Long id,
+    String shortName,
+    String name,
+    List<TimeSlot> availabilities
+) {
+}

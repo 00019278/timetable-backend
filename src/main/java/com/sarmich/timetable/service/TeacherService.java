@@ -3,7 +3,7 @@ package com.sarmich.timetable.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sarmich.timetable.domain.TeacherEntity;
-import com.sarmich.timetable.exp.exception.NotFoundException;
+import com.sarmich.timetable.exception.NotFoundException;
 import com.sarmich.timetable.mapper.TeacherMapper;
 import com.sarmich.timetable.model.request.TeacherRequest;
 import com.sarmich.timetable.model.response.TeacherResponse;
@@ -25,49 +25,52 @@ public class TeacherService {
     private final SubjectRepository subjectRepository;
 
 
-    public TeacherResponse create(TeacherRequest dto) {
-        SubjectEntity subject = subjectRepository.findByIdAndProfileIdAndDeletedFalse(dto.subjectId(), SpringSecurityUtil.getProfileId());
+    public TeacherResponse create(Integer orgId, TeacherRequest dto) {
+        SubjectEntity subject = subjectRepository.findByIdAndOrgIdAndDeletedFalse(dto.subjectId(), orgId);
         if (subject == null) {
             throw new NotFoundException("Subject not found");
         }
         TeacherEntity entity = TeacherMapper.INSTANCE.toEntity(dto);
-        entity.setProfileId(SpringSecurityUtil.getProfileId());
-        entity.setLessonTimes(objectMapper.convertValue(dto.lessonTimes(), new TypeReference<>() {
-        }));
+        entity.setOrgId(orgId);
         entity = teacherRepository.save(entity);
         return TeacherMapper.INSTANCE.toResponse(entity, objectMapper);
     }
 
-    public TeacherResponse update(TeacherUpdateRequest dto) {
-        TeacherEntity old = teacherRepository.findByIdAndProfileIdAndDeletedFalse(dto.id(), SpringSecurityUtil.getProfileId());
+    public TeacherResponse update(Integer orgId, TeacherUpdateRequest dto) {
+        TeacherEntity old = teacherRepository.findByIdAndOrgIdAndDeletedFalse(dto.id(), orgId);
         if (old == null) {
             throw new NotFoundException("Teacher not found");
         }
-        SubjectEntity subject = subjectRepository.findByIdAndProfileIdAndDeletedFalse(dto.subjectId(), SpringSecurityUtil.getProfileId());
+        SubjectEntity subject = subjectRepository.findByIdAndOrgIdAndDeletedFalse(dto.subjectId(), orgId);
         if (subject == null) {
             throw new NotFoundException("Subject not found");
         }
         TeacherEntity entity = TeacherMapper.INSTANCE.toEntity(dto);
-        entity.setLessonTimes(objectMapper.convertValue(dto.lessonTimes(), new TypeReference<>() {
-        }));
+        entity.setOrgId(orgId);
         entity = teacherRepository.save(entity);
         return TeacherMapper.INSTANCE.toResponse(entity, objectMapper);
     }
 
-    public void delete(Long id) {
-        TeacherEntity teacher = teacherRepository.findByIdAndProfileIdAndDeletedFalse(id, SpringSecurityUtil.getProfileId());
+    public void delete(Integer orgId, Integer id) {
+        TeacherEntity teacher = teacherRepository.findByIdAndOrgIdAndDeletedFalse(id, orgId);
+        if (teacher == null) {
+            throw new NotFoundException("Teacher not found");
+        }
         teacher.setDeleted(true);
         teacherRepository.save(teacher);
     }
 
-    public TeacherResponse get(Long id) {
-        return TeacherMapper.INSTANCE.toResponse(
-                teacherRepository.findByIdAndProfileIdAndDeletedFalse(id, SpringSecurityUtil.getProfileId()), objectMapper);
+    public TeacherResponse get(Integer orgId, Integer id) {
+        TeacherEntity entity = teacherRepository.findByIdAndOrgIdAndDeletedFalse(id, orgId);
+        if (entity == null) {
+            throw new NotFoundException("Teacher not found");
+        }
+        return TeacherMapper.INSTANCE.toResponse(entity, objectMapper);
 
     }
 
-    public List<TeacherResponse> findAll() {
-        return teacherRepository.findAllByProfileIdAndDeletedFalse(SpringSecurityUtil.getProfileId()).stream()
+    public List<TeacherResponse> findAll(Integer orgId) {
+        return teacherRepository.findAllByOrgIdAndDeletedFalse(orgId).stream()
                 .map(t -> TeacherMapper.INSTANCE.toResponse(t, objectMapper))
                 .toList();
     }

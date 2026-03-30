@@ -14,9 +14,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ApiConfig {
 
-    @Value("${server.host}")
-    private String url;
-
     @Bean
     public OpenAPI myOpenAPI() {
         Server devServer = new Server();

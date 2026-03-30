@@ -1,90 +1,39 @@
 package com.sarmich.timetable.domain;
 
+import com.sarmich.timetable.model.TimeSlot;
+import com.sarmich.timetable.utils.Constants;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.util.List;
 
+@Getter
+@Setter
 @Entity
-@Table(name = "subject")
+@Table(name = Constants.TABLE_SUBJECT)
+@EntityListeners(AuditingEntityListener.class)
+
 public class SubjectEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
-    private String name;
+  private Integer orgId;
+  private String name;
+  private String shortName;
 
-    private String shortName;
+  @JdbcTypeCode(SqlTypes.JSON)
+  private List<TimeSlot> availabilities;
 
-    @Column(name = "profile_id")
-    private Integer profileId;
-    private boolean deleted=false;
-
-    @CreatedDate
-    private Instant createdDate=Instant.now();
-
-    @LastModifiedDate
-    private Instant updatedDate=Instant.now();
-
-    private Integer priority;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getShortName() {
-        return shortName;
-    }
-
-    public void setShortName(String shortName) {
-        this.shortName = shortName;
-    }
-
-    public Integer getProfileId() {
-        return profileId;
-    }
-
-    public void setProfileId(Integer profileId) {
-        this.profileId = profileId;
-    }
-
-
-
-    public Boolean getDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(Boolean deleted) {
-        this.deleted = deleted;
-    }
-
-    public Instant getCreatedDate() {
-        return createdDate;
-    }
-
-    public void setCreatedDate(Instant createdDate) {
-        this.createdDate = createdDate;
-    }
-
-    public Integer getPriority() {
-        return priority;
-    }
-
-    public void setPriority(Integer priority) {
-        this.priority = priority;
-    }
+  private Boolean deleted = Boolean.FALSE;
+  @CreatedDate private Instant createdDate = Instant.now();
+  @LastModifiedDate private Instant updatedDate = Instant.now();
 }

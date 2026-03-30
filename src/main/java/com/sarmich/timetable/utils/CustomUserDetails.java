@@ -1,6 +1,6 @@
 package com.sarmich.timetable.utils;
 
-import com.sarmich.timetable.domain.ProfileEntity;
+import com.sarmich.timetable.domain.UserEntity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,13 +11,13 @@ import java.util.Collections;
 public class CustomUserDetails implements UserDetails {
 
     private Integer id;
-    private ProfileEntity profileEntity;
+    private UserEntity profileEntity;
 
     public CustomUserDetails(Integer id) {
         this.id = id;
     }
 
-    public CustomUserDetails(ProfileEntity profileEntity) {
+    public CustomUserDetails(UserEntity profileEntity) {
         this.profileEntity = profileEntity;
     }
 
@@ -58,7 +58,7 @@ public class CustomUserDetails implements UserDetails {
         return true;
     }
 
-    public ProfileEntity getProfileEntity() {
+    public UserEntity getProfileEntity() {
         return profileEntity;
     }
 }

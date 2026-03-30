@@ -15,23 +15,23 @@ public interface SubjectRepository extends JpaRepository<SubjectEntity, Long> {
 
     @Transactional
     @Modifying
-    @Query("update SubjectEntity set name = ?2, shortName = ?3 where id = ?1 and profileId = ?4")
+    @Query("update SubjectEntity set name = ?2, shortName = ?3 where id = ?1 and orgId = ?4")
     int update(Long id, String name, String shortName, Integer profileId);
 
     @Transactional
     @Modifying
-    @Query("update SubjectEntity set deleted = true where id = ?1 and profileId = ?2")
-    void updateDeleted(Long id, Integer profileId);
+    @Query("update SubjectEntity set deleted = true where id = ?1 and orgId = ?2")
+    void updateDeleted(Integer id, Integer profileId);
 
-    @Query("select s from SubjectEntity s where s.id = ?1 and s.profileId = ?2 and s.deleted = false")
+    @Query("select s from SubjectEntity s where s.id = ?1 and s.orgId = ?2 and s.deleted = false")
     Optional<SubjectEntity> get(Long id, Integer profileId);
 
-    @Query("select s from SubjectEntity s where s.profileId = ?1 and s.deleted = false")
+    @Query("select s from SubjectEntity s where s.orgId = ?1 and s.deleted = false")
     Page<SubjectEntity> getAll(Integer profileId, Pageable page);
 
-    List<SubjectEntity> findAllByProfileIdAndDeletedFalse(Integer id, Pageable page);
+    List<SubjectEntity> findAllByOrgIdAndDeletedFalse(Integer id, Pageable page);
 
-    long countByProfileIdAndDeletedFalse(Integer id);
+    long countByOrgIdAndDeletedFalse(Integer id);
 
-    SubjectEntity findByIdAndProfileIdAndDeletedFalse(Long id, Integer profileId);
+    SubjectEntity findByIdAndOrgIdAndDeletedFalse(Integer id, Integer orgId);
 }

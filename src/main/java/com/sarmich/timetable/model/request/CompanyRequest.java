@@ -1,10 +1,8 @@
 package com.sarmich.timetable.model.request;
 
-import java.time.Instant;
+import com.sarmich.timetable.model.LessonPeriod;
+import java.time.DayOfWeek;
+import java.util.List;
 
 public record CompanyRequest(
-        Instant startTime,
-        Instant timeLesson,
-        Instant breakTime,
-        Integer maxLesson
-){}
+    String name, String description, List<DayOfWeek> daysOfWeek, List<LessonPeriod> periods) {}

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record ClassUpdateRequest (
     @NotNull(message = "id required")
-     Long id,
+     Integer id,
      String name,
      String shortName,
      Days days

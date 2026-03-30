@@ -8,7 +8,14 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class CompanyService {
 
+    private final com.sarmich.timetable.repository.CompanyRepository companyRepository;
+
     public void create(CompanyRequest company) {
-        // Your implementation logic goes here
+        com.sarmich.timetable.domain.CompanyEntity entity = new com.sarmich.timetable.domain.CompanyEntity();
+        entity.setName(company.name());
+        entity.setDescription(company.description());
+        entity.setDaysOfWeek(company.daysOfWeek());
+        entity.setPeriods(company.periods());
+        companyRepository.save(entity);
     }
 }

@@ -11,9 +11,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class TimetableExporter {
-
-  public static void exportToExcel(List<Response> responses, String filePath, int maxHoursPerDay)
-      throws Exception {
+  public static void exportToExcel(List<Response> responses, String filePath) throws Exception {
     Workbook workbook = new XSSFWorkbook();
     Sheet sheet = workbook.createSheet("Timetable");
 
@@ -28,25 +26,30 @@ public class TimetableExporter {
     }
 
     // Guruhlash class bo‘yicha
-    Map<com.sarmich.timetable.google.or.models.Class, List<Response>> groupedByClass =
+    Map<Class, List<Response>> groupedByClass =
         responses.stream().collect(Collectors.groupingBy(Response::getClassObj));
 
     int rowNum = 1;
-    for (Map.Entry<com.sarmich.timetable.google.or.models.Class, List<Response>> entry : groupedByClass.entrySet()) {
+    for (Map.Entry<Class, List<Response>> entry : groupedByClass.entrySet()) {
       Class classObj = entry.getKey();
       List<Response> lessons = entry.getValue();
 
-      for (int h = 1; h <= maxHoursPerDay; h++) {
+      for (int h = 1; h <= 7; h++) { // 1-kundan 7-soatgacha
         Row row = sheet.createRow(rowNum++);
         row.createCell(0).setCellValue(classObj.getName());
         row.createCell(1).setCellValue(h);
 
         col = 2;
         for (DayOfWeek day : DayOfWeek.values()) {
-            int finalH = h;
-            String value =
+          int finalH = h;
+          String value =
               lessons.stream()
-                  .filter(r -> r.getDay() == day && Objects.equals(r.getHour(), finalH))
+                  .filter(
+                      r -> {
+                        DayOfWeek d = r.getDay();
+                        int hourOfDay = r.getHour();
+                        return d == day && hourOfDay == finalH;
+                      })
                   .map(r -> r.getSubject().getName() + " (" + r.getTeacher().getName() + ")")
                   .findFirst()
                   .orElse("");

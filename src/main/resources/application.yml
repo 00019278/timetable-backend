@@ -1,0 +1,100 @@
+server:
+  port: 8101
+  forward-headers-strategy: framework
+  servlet:
+    contextPath: /
+  error:
+    whitelabel:
+      enabled: false
+spring:
+  mail:
+    host: smtp.mail.ru
+    port: 465
+    username: wiut00019278@gmail.com
+    protocol: smtps
+  application:
+    name: timetable
+
+  batch:
+    jdbc:
+      initialize-schema: always
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${POSTGRES_SERVER:localhost:5434}/postgres
+    username: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:secret}
+
+    hikari:
+      pool-name: HikariPool-${spring.application.name}
+      maximum-pool-size: ${POSTGRES_POOL_SIZE:20}
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      initialization-fail-timeout: 0
+      connection-test-query: SELECT 1
+      leak-detection-threshold: 2000
+      register-mbeans: true
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  liquibase:
+    url: jdbc:postgresql://${POSTGRES_SERVER:localhost:5434}/postgres
+    user: ${POSTGRES_USER:postgres}
+    password: ${POSTGRES_PASSWORD:secret}
+    change-log: classpath:db.migration/db.changelog-master.yaml
+    liquibase-schema: public
+    enabled: true
+  cache:
+    type: redis
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:M1msoFt}
+
+  codec:
+    max-in-memory-size: 16MB
+
+  servlet:
+    multipart:
+      max-file-size: 16MB
+
+springdoc:
+  api-docs:
+    path: /api/users/v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus
+      base-path: /api/users/actuator
+  endpoint:
+    prometheus:
+      enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    version: "@application.version@"
+    description: "@application.description@"
+
+application:
+  build-type: ${BUILD_TYPE:dev}
+  token:
+    signing:
+      key: 7C7P662RQS6JXHJL3VEK8ZJU0VHU4KZ2JXYJ8LZOCYHV591S97SL32HFZMADCVI2

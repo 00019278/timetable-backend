@@ -12,5 +12,5 @@ import lombok.Setter;
 public class Subject {
   Integer id;
   String name;
-//  Integer priority;
+  //  Integer priority;
 }

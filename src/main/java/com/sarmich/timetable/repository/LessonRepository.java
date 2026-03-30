@@ -14,12 +14,12 @@ public interface LessonRepository extends JpaRepository<LessonEntity, Long> {
 
     @Transactional
     @Modifying
-    @Query("update LessonEntity set deleted = true where id = ?1 and profileId = ?2")
-    void updateDeleted(Long id, Integer profileId);
+    @Query("update LessonEntity set deleted = true where id = ?1 and orgId = ?2")
+    void updateDeleted(Integer id, Integer profileId);
 
-    List<LessonEntity> findAllByProfileIdAndDeletedFalse(Integer id, Pageable page);
+    List<LessonEntity> findAllByOrgIdAndDeletedFalse(Integer id, Pageable page);
 
-    long countByProfileIdAndDeletedFalse(Integer id);
+    long countByOrgIdAndDeletedFalse(Integer id);
 
-    LessonEntity findByIdAndProfileIdAndDeletedFalse(Long id, Integer profileId);
+    LessonEntity findByIdAndOrgIdAndDeletedFalse(Integer id, Integer orgId);
 }

@@ -26,6 +26,6 @@ public abstract class TeacherMapper {
     public abstract TeacherResponse toResponse(TeacherEntity teacher);
 
     public TeacherResponse toResponse(TeacherEntity teacher, ObjectMapper objectMapper) {
-        return toResponse(teacher, objectMapper.convertValue(teacher.getLessonTimes(), LessonTime.class));
+        return toResponse(teacher, objectMapper.convertValue(null, LessonTime.class));
     }
 }

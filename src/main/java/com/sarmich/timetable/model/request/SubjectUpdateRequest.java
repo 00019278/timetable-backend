@@ -7,7 +7,7 @@ import lombok.Setter;
 public record SubjectUpdateRequest(
 
         @NotNull(message = "id required")
-        Long id,
+        Integer id,
 
         String name,
         String shortName,

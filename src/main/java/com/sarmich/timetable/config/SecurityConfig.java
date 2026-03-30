@@ -1,109 +1,98 @@
 package com.sarmich.timetable.config;
 
-import com.sarmich.timetable.utils.MD5Util;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
-import org.springframework.security.config.annotation.web.configurers.FormLoginConfigurer;
-import org.springframework.security.config.annotation.web.configurers.HttpBasicConfigurer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)
-@AllArgsConstructor
+@EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UserDetailsService userDetailsService;
-    private final TokenFilter tokenFilter;
-    private final CorsConfigurationSource corsConfigurationSource;
+  private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-
-
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();
-        authenticationProvider.setUserDetailsService(userDetailsService);
-        authenticationProvider.setPasswordEncoder(passwordEncoder());
-        return authenticationProvider;
-    }
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .csrf(CsrfConfigurer::disable)
-                .sessionManagement(sessionManagement ->
-                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .formLogin(FormLoginConfigurer::disable)
-                .httpBasic(HttpBasicConfigurer::disable)
-                .authorizeRequests(authorizeRequests ->
-                        authorizeRequests
-                                .requestMatchers(
-                                        "/",
-                                        "/error",
-                                        "/favicon.ico",
-                                        "*.png",
-                                        "*.gif",
-                                        "*.svg",
-                                        "*.jpg",
-                                        "*.html",
-                                        "*.css",
-                                        "*.js"
-                                ).permitAll()
-                                .requestMatchers(AUTH_WHITELIST).permitAll()
-                                .requestMatchers(
-                                        "/auth/**",
-                                        "/oauth2/**",
-                                        "/attach/open/**",
-                                        "/product/**",
-                                        "/category/**"
-                                ).permitAll()
-                                .requestMatchers("/admin/**").hasAnyRole("ADMIN")
-                                .anyRequest().authenticated()
-                );
-
-        http.addFilterBefore(tokenFilter, UsernamePasswordAuthenticationFilter.class);
-        return http.build();
-    }
-
-    // Uncomment the @Bean annotation if you want to include the passwordEncoder bean
-    // @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new PasswordEncoder() {
-            @Override
-            public String encode(CharSequence rawPassword) {
-                return rawPassword.toString();
-            }
-
-            @Override
-            public boolean matches(CharSequence rawPassword, String encodedPassword) {
-                return MD5Util.getMd5Hash(rawPassword.toString()).equals(encodedPassword);
-            }
-        };
-    }
-
-    public static final String[] AUTH_WHITELIST = {
-            "/v2/api-docs",
-            "/configuration/ui",
-            "/configuration/security",
-            "/swagger-ui.html",
-            "/webjars/**",
-            "/v3/api-docs/**",
-            "/swagger-ui/**",
-            "/swagger-resources",
-            "/swagger-resources/**"
-    };
+  @Bean
+  public SecurityFilterChain securityWebFilterChain(final HttpSecurity http) throws Exception {
+    return http.exceptionHandling(
+            exception ->
+                exception.authenticationEntryPoint(
+                    new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+        .csrf(AbstractHttpConfigurer::disable)
+        .cors(Customizer.withDefaults())
+        .httpBasic(AbstractHttpConfigurer::disable)
+        .authorizeHttpRequests(
+            exchangeSpec ->
+                exchangeSpec
+                    .requestMatchers("/api/users/v1/users/login")
+                    .permitAll()
+                    .requestMatchers(
+                        "/api/users/v1/drivers/login",
+                        "/api/users/v1/platform/login",
+                        "/api/users/v1/users/system/login")
+                    .permitAll()
+                    .requestMatchers(
+                        "/api/users/v1/merchant/admin/qr/generate",
+                        "/api/users/v1/merchant/admin/qr/check")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/users/v1/users/code")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/users/v1/users/verify")
+                    .permitAll()
+                    .requestMatchers("/api/users/v1/local/**")
+                    .permitAll()
+                    .requestMatchers("/api/users/v1/merchants/join")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/users/v1/merchants")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/users/v1/merchants/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/users/v1/city-merchant/merchant/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/users/v1/branches")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/users/v1/region/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/users/v1/branches/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/users/v1/merchant/settings/mobile/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/users/v1/merchant/settings/web/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/users/v1/merchant/settings/qr/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/users/v1/merchant/settings/telegram/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "api/users/v1/click/**")
+                    .permitAll()
+                    .requestMatchers(
+                        HttpMethod.GET,
+                        "api/users/v1/analytics-setting",
+                        "api/users/v1/analytics-setting**")
+                    .permitAll()
+                    .requestMatchers("/swagger-ui.html")
+                    .permitAll()
+                    .requestMatchers("/swagger-ui/**", "/api/users/actuator/**")
+                    .permitAll()
+                    .requestMatchers("/api/users/v3/api-docs/**")
+                    .permitAll()
+                    .requestMatchers("/auth/**")
+                    .permitAll())
+        .authorizeHttpRequests((auth) -> auth.anyRequest().authenticated())
+        .sessionManagement(
+            manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .build();
+  }
 }

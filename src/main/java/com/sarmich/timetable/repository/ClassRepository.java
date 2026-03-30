@@ -11,14 +11,14 @@ import java.util.List;
 
 public interface ClassRepository extends JpaRepository<ClassEntity, Long> {
 
-    ClassEntity findByIdAndProfileIdAndDeletedFalse(Long id, Integer profileId);
+    ClassEntity findByIdAndOrgIdAndDeletedFalse(Integer id, Integer orgId);
 
     @Transactional
     @Modifying
-    @Query("update ClassEntity set deleted = true where id = ?1 and profileId = ?2")
-    void updateDeleted(Long id, Integer profileId);
+    @Query("update ClassEntity set deleted = true where id = ?1 and orgId = ?2")
+    void updateDeleted(Integer id, Integer profileId);
 
-    List<ClassEntity> findAllByProfileIdAndDeletedFalse(Integer profileId, Pageable pageable);
+    List<ClassEntity> findAllByOrgIdAndDeletedFalse(Integer profileId, Pageable pageable);
 
-    Long countByProfileIdAndDeletedFalse(Integer profileId);
+    Long countByOrgIdAndDeletedFalse(Integer profileId);
 }
