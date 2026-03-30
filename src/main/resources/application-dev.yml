@@ -3,7 +3,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: wiut00019278@gmail.com
-    password: hwymfmtptqjsnihy
+    password: evqpwkqhedkpoczt
     protocol: smtp
     properties:
       mail:
@@ -18,7 +18,7 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://postgres:5433/postgres
+    url: jdbc:postgresql://postgres:5433/timetable_db
     username: postgres
     password: secret
 
@@ -42,7 +42,7 @@ spring:
     open-in-view: false
 
   liquibase:
-    url: jdbc:postgresql://postgres:5433/postgres
+    url: jdbc:postgresql://postgres:5433/timetable_db
     user: postgres
     password: secret
     change-log: classpath:db.migration/db.changelog-master.yaml
