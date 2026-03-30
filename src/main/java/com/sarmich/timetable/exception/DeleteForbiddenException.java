@@ -2,8 +2,6 @@ package com.sarmich.timetable.exception;
 
 import com.sarmich.timetable.exception.handler.ErrorCode;
 
-
-
 public class DeleteForbiddenException extends ForbiddenException {
 
   private ErrorCode code = ErrorCode.DELETE_FORBIDDEN_ERROR_CODE;

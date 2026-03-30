@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+    <changeSet id="20240523-add-score-columns-to-timetable" author="00019278">
+        <sql>
+          INSERT INTO timetable.organization (id, name, description, days_of_week, periods, created_by, created_date,
+                                              last_modified_date, deleted)
+          VALUES (2, '3-maktab', ' ', '["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"]',
+                  '[{"name": "1-lesson", "endTime": "09:50", "isBreak": false, "duration": 50, "startTime": "09:00"}, {"name": "2-lesson", "endTime": "10:50", "isBreak": false, "duration": 50, "startTime": "10:00"}, {"name": "3-lesson", "endTime": "11:50", "isBreak": false, "duration": 50, "startTime": "11:00"}, {"name": "Lunch break", "endTime": "12:30", "isBreak": true, "duration": 40, "startTime": "11:50"}, {"name": "4-lesson", "endTime": "13:20", "isBreak": false, "duration": 50, "startTime": "12:30"}, {"name": "5-lesson", "endTime": "14:20", "isBreak": false, "duration": 50, "startTime": "13:30"}, {"name": "6-lesson", "endTime": "15:20", "isBreak": false, "duration": 50, "startTime": "14:30"}, {"name": "7-lesson", "endTime": "16:20", "isBreak": false, "duration": 50, "startTime": "15:30"}]',
+                  1, '2026-01-13 11:39:40.973981', '2026-01-13 11:39:40.973981', false);
+
+        </sql>
+    </changeSet>
+</databaseChangeLog>

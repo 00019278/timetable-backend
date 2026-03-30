@@ -2,9 +2,6 @@ package com.sarmich.timetable.utils;
 
 import com.sarmich.timetable.exception.NotFoundException;
 import com.sarmich.timetable.exception.handler.ErrorCode;
-import lombok.extern.log4j.Log4j2;
-import org.springframework.data.domain.Pageable;
-
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -12,6 +9,8 @@ import java.time.ZoneOffset;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.data.domain.Pageable;
 
 @Log4j2
 public class Util {
@@ -33,7 +32,8 @@ public class Util {
   public static <T> void checkNull(T t, final Class<T> tClass) {
     if (t == null) {
       log.debug("[{}] not found", tClass.getSimpleName());
-      throw new NotFoundException(tClass.getSimpleName() + " not found");
+      throw new NotFoundException(
+          ErrorCode.NOT_FOUND_ERROR_CODE, tClass.getSimpleName() + " not found");
     }
   }
 
@@ -44,8 +44,8 @@ public class Util {
     }
   }
 
-  public static <T> HashMap<Long, T> mapById(List<T> list, Function<T, Long> idExtractor) {
-    HashMap<Long, T> map = new HashMap<>();
+  public static <T> HashMap<Integer, T> mapById(List<T> list, Function<T, Integer> idExtractor) {
+    HashMap<Integer, T> map = new HashMap<>();
     list.forEach(item -> map.put(idExtractor.apply(item), item));
     return map;
   }
@@ -57,16 +57,7 @@ public class Util {
     return map;
   }
 
-  public static <T> List<Long> idList(List<T> list, Function<T, Long> idExtractor) {
-    return list.stream()
-        .map(idExtractor)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toSet())
-        .stream()
-        .toList();
-  }
-
-  public static <T> List<Long> idList(Set<T> list, Function<T, Long> idExtractor) {
+  public static <T> List<Integer> idList(List<T> list, Function<T, Integer> idExtractor) {
     return list.stream()
         .map(idExtractor)
         .filter(Objects::nonNull)
@@ -166,5 +157,4 @@ public class Util {
 
     return sb.toString();
   }
-
 }

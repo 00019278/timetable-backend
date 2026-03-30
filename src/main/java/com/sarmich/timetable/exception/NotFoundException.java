@@ -1,13 +1,9 @@
 package com.sarmich.timetable.exception;
 
-import lombok.Getter;
 import com.sarmich.timetable.exception.handler.ErrorCode;
-
-
 import com.sarmich.timetable.exception.handler.ExceptionInterface;
-
-
 import java.util.NoSuchElementException;
+import lombok.Getter;
 
 public class NotFoundException extends NoSuchElementException implements ExceptionInterface {
   private ErrorCode code = ErrorCode.NOT_FOUND_ERROR_CODE;

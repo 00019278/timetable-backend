@@ -1,9 +1,8 @@
 package com.sarmich.timetable.exception;
 
-import lombok.Getter;
 import com.sarmich.timetable.exception.handler.ErrorCode;
-
 import com.sarmich.timetable.exception.handler.ExceptionInterface;
+import lombok.Getter;
 
 public class ForbiddenException extends RuntimeException implements ExceptionInterface {
   private ErrorCode code = ErrorCode.FORBIDDEN_ERROR_CODE;

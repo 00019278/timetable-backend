@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+    <changeSet id="20240523-add-score-columns-to-timetable" author="00019278">
+        <sql>
+            ALTER TABLE timetable.timetable
+            ADD COLUMN IF NOT EXISTS score INTEGER,
+            ADD COLUMN IF NOT EXISTS teacher_gaps INTEGER,
+            ADD COLUMN IF NOT EXISTS class_gaps INTEGER;
+        </sql>
+    </changeSet>
+</databaseChangeLog>

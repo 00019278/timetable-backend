@@ -1,12 +1,11 @@
 package com.sarmich.timetable.repository;
 
 import com.sarmich.timetable.domain.UserEntity;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 public interface UserRepository extends CrudRepository<UserEntity, Integer> {
 

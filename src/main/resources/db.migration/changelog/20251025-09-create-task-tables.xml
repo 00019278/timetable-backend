@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+    <changeSet id="create-tables" author="00019278">
+        <sql>
+          CREATE TABLE timetable.tasks
+          (
+            id           UUID PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
+            org_id       INT                      NOT NULL,
+            message      TEXT,
+            is_success   BOOLEAN                  NOT NULL DEFAULT FALSE,
+            is_finished  BOOLEAN                  NOT NULL DEFAULT FALSE,
+            created_by   INT,
+            created_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+          );
+
+        </sql>
+    </changeSet>
+</databaseChangeLog>

@@ -1,11 +1,7 @@
 package com.sarmich.timetable.model.request;
 
+import com.sarmich.timetable.model.TimeSlot;
+import java.util.List;
 
-import com.sarmich.timetable.model.LessonTime;
-
-public record TeacherRequest (
-     String firstName,
-     String lastName,
-     Integer subjectId,
-     LessonTime lessonTimes
-){}
+public record TeacherRequest(
+    String fullName, String shortName, List<Integer> subjects, List<TimeSlot> availabilities) {}

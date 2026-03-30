@@ -3,7 +3,6 @@ package com.sarmich.timetable.mapper;
 import com.sarmich.timetable.domain.UserEntity;
 import com.sarmich.timetable.model.UserResponse;
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
 

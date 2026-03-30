@@ -1,14 +1,11 @@
 package com.sarmich.timetable.model.request;
 
-import com.sarmich.timetable.model.LessonTime;
-import jakarta.validation.constraints.NotNull;
+import com.sarmich.timetable.model.TimeSlot;
+import java.util.List;
 
 public record TeacherUpdateRequest(
-        @NotNull(message = "id required")
-        Integer id,
-        String firstName,
-        String lastName,
-        Integer subjectId,
-        LessonTime lessonTimes
-) {
-}
+    String fullName,
+    String shortName,
+    List<Integer> subjects,
+    List<Integer> deletedSubjects,
+    List<TimeSlot> availabilities) {}

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <changeSet id="20260115-create-group-table" author="00019278">
+       <sql>
+           CREATE TABLE timetable.groups
+           (
+               id           SERIAL PRIMARY KEY,
+               org_id       INT          NOT NULL,
+               class_id     INT          NOT NULL,
+               name         VARCHAR(255) NOT NULL,
+               created_by   INT,
+               deleted      BOOLEAN   DEFAULT FALSE,
+               created_date TIMESTAMP DEFAULT now(),
+               updated_date TIMESTAMP DEFAULT now()
+           );
+       </sql>
+    </changeSet>
+
+</databaseChangeLog>

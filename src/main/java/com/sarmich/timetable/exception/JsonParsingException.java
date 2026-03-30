@@ -1,10 +1,7 @@
 package com.sarmich.timetable.exception;
 
 import com.sarmich.timetable.exception.handler.ErrorCode;
-
-
 import com.sarmich.timetable.exception.handler.ExceptionInterface;
-
 
 public class JsonParsingException extends RuntimeException implements ExceptionInterface {
   private ErrorCode code = ErrorCode.JSON_PARSING_ERROR_CODE;

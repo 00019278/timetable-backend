@@ -1,0 +1,78 @@
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: wiut00019278@gmail.com
+    password: hwymfmtptqjsnihy
+    protocol: smtp
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  batch:
+    jdbc:
+      initialize-schema: always
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://postgres:5433/postgres
+    username: postgres
+    password: secret
+
+    hikari:
+      pool-name: HikariPool-${spring.application.name}
+      maximum-pool-size: ${POSTGRES_POOL_SIZE:20}
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      initialization-fail-timeout: 0
+      connection-test-query: SELECT 1
+      leak-detection-threshold: 2000
+      register-mbeans: true
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  liquibase:
+    url: jdbc:postgresql://postgres:5433/postgres
+    user: postgres
+    password: secret
+    change-log: classpath:db.migration/db.changelog-master.yaml
+    liquibase-schema: timetable
+    enabled: true
+  cache:
+    type: redis
+
+
+  data:
+    redis:
+      host: redis
+
+
+
+
+
+
+      port: 6379
+      password: secret
+
+  codec:
+    max-in-memory-size: 16MB
+
+  servlet:
+    multipart:
+      max-file-size: 16MB
+
+application:
+  build-type: dev
+  token:
+    signing:
+      key: 7C7P662RQS6JXHJL3VEK8ZJU0VHU4KZ2JXYJ8LZOCYHV591S97SL32HFZMADCVI2

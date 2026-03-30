@@ -1,8 +1,3 @@
 package com.sarmich.timetable.model.request;
 
-import jakarta.validation.constraints.NotBlank;
-
-public record GoogleLoginRequest(
-    String idToken
-) {
-}
+public record GoogleLoginRequest(String idToken) {}

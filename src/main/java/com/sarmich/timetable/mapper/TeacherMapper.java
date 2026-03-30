@@ -1,31 +1,29 @@
 package com.sarmich.timetable.mapper;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sarmich.timetable.domain.TeacherEntity;
-import com.sarmich.timetable.model.LessonTime;
 import com.sarmich.timetable.model.request.TeacherRequest;
-import com.sarmich.timetable.model.response.TeacherResponse;
 import com.sarmich.timetable.model.request.TeacherUpdateRequest;
+import com.sarmich.timetable.model.response.SubjectResponse;
+import com.sarmich.timetable.model.response.TeacherResponse;
+import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
 
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = InstantMapper.class)
 public abstract class TeacherMapper {
-    public static final TeacherMapper INSTANCE = Mappers.getMapper(TeacherMapper.class);
+  public static final TeacherMapper INSTANCE = Mappers.getMapper(TeacherMapper.class);
 
-//    @Mapping(target = "lessonTimes", ignore = true)
-    public abstract TeacherEntity toEntity(TeacherRequest teacher);
-//    @Mapping(target = "lessonTimes", ignore = true)
-    public abstract TeacherEntity toEntity(TeacherUpdateRequest teacher);
+  public abstract TeacherEntity toEntity(TeacherRequest teacher);
 
-//    @Mapping(target = "lessonTimes", source = "lessonTimes")
-    public abstract TeacherResponse toResponse(TeacherEntity teacher, LessonTime lessonTimes);
-//    @Mapping(target = "lessonTimes", ignore = true)
-    public abstract TeacherResponse toResponse(TeacherEntity teacher);
+  public abstract TeacherEntity updateEntityFromDto(
+      TeacherUpdateRequest dto, @MappingTarget TeacherEntity entity);
 
-    public TeacherResponse toResponse(TeacherEntity teacher, ObjectMapper objectMapper) {
-        return toResponse(teacher, objectMapper.convertValue(null, LessonTime.class));
-    }
+  @Mapping(target = "subjects", ignore = true)
+  public abstract TeacherResponse toResponse(TeacherEntity teacher);
+
+  @Mapping(target = "subjects", source = "subjects")
+  public abstract TeacherResponse toResponse(TeacherEntity teacher, List<SubjectResponse> subjects);
 }

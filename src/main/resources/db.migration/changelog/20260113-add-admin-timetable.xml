@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+    <changeSet id="20240523-add-score-columns-to-timetable" author="00019278">
+        <sql>
+          INSERT INTO timetable.users (id, name, surname, email, phone, photo, password, role, created_date,
+                                       updated_date, deleted)
+          VALUES (1, 'Sultonxon', 'Ziyodullaev', 'wiut00019278@gmail.com', '+998935574433', null,
+                  '$2a$10$mu6RSPHjoVc.xXP9sksXM.kisjnOOMV9iRj2SMgOU277YOMUI8F/C', 'ROLE_USER',
+                  '2026-01-13 11:12:55.520333', '2026-01-13 11:12:55.520333', false);
+        </sql>
+    </changeSet>
+</databaseChangeLog>

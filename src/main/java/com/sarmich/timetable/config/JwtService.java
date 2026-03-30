@@ -42,8 +42,12 @@ public class JwtService {
   }
 
   // Convenience for our Integer user IDs
-  public String generateUserToken(Integer userId, String iss, Long expiration) {
-    return generateToken(Map.of("userId", userId.toString()), userId.toString(), iss, expiration);
+  public String generateUserToken(Integer userId, Integer orgId, String iss, Long expiration) {
+    return generateToken(
+        Map.of("userId", userId.toString(), "orgId", orgId.toString()),
+        userId.toString(),
+        iss,
+        expiration);
   }
 
   public boolean isTokenValid(String token, String sub) {

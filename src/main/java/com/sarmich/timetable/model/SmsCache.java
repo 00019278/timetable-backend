@@ -1,7 +1,5 @@
 package com.sarmich.timetable.model;
 
-public record SmsCache(
-    String email,
-    Integer code
-) {
-}
+import java.time.Instant;
+
+public record SmsCache(String email, Integer code, Instant time) {}

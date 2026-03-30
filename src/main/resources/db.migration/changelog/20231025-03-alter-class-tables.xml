@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+    <changeSet id="create-tables" author="00019278">
+        <sql>
+
+            ALTER TABLE timetable.classes add column if not exists teacher_id integer;
+
+            CREATE TABLE IF NOT EXISTS timetable.timetable (
+                id   UUID PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
+                org_id INTEGER,
+                task_id UUID,
+                name VARCHAR(255) ,
+                created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                deleted BOOLEAN DEFAULT FALSE
+                );
+
+            CREATE TABLE IF NOT EXISTS timetable.timetable_data (
+                id   UUID PRIMARY KEY DEFAULT uuid_generate_v4() NOT NULL,
+                timetable_id UUID,
+                is_scheduled BOOLEAN,
+                subject_id INTEGER,
+                class_id INTEGER,
+                teacher_id INTEGER,
+                room_id INTEGER,
+                day_of_week TEXT,
+                hour INTEGER,
+                scheduled_data JSONB,
+                unscheduled_data JSONB
+                );
+        </sql>
+    </changeSet>
+</databaseChangeLog>

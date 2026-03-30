@@ -7,7 +7,7 @@
     <changeSet id="create-tables" author="00019278">
         <sql>
             CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE IF NOT EXISTS timetable.users (
                id SERIAL PRIMARY KEY,
               name VARCHAR(255),
               surname VARCHAR(255),
@@ -22,7 +22,7 @@
               );
 
 
-            CREATE TABLE IF NOT EXISTS teacher (
+            CREATE TABLE IF NOT EXISTS timetable.teacher (
               id SERIAL PRIMARY KEY,
               org_id INTEGER,
               full_name VARCHAR(255),
@@ -33,7 +33,7 @@
               created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
               updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
               );
-            CREATE TABLE IF NOT EXISTS subject (
+            CREATE TABLE IF NOT EXISTS timetable.subject (
               id SERIAL PRIMARY KEY,
               org_id INTEGER,
               name VARCHAR(255),
@@ -44,7 +44,7 @@
               updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
               );
 
-            CREATE TABLE IF NOT EXISTS room (
+            CREATE TABLE IF NOT EXISTS timetable.room (
               id SERIAL PRIMARY KEY,
               org_id INTEGER,
               name VARCHAR(255),
@@ -56,7 +56,7 @@
               updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
               );
 
-            CREATE TABLE IF NOT EXISTS lesson (
+            CREATE TABLE IF NOT EXISTS timetable.lesson (
               id SERIAL PRIMARY KEY,
               org_id INTEGER,
               subject_id INTEGER,
@@ -72,7 +72,7 @@
               updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
               );
 
-            CREATE TABLE IF NOT EXISTS organization (
+            CREATE TABLE IF NOT EXISTS timetable.organization (
               id SERIAL PRIMARY KEY,
               name VARCHAR(255) NOT NULL,
               description TEXT,
@@ -84,7 +84,7 @@
               );
 
 
-            CREATE TABLE IF NOT EXISTS classes (
+            CREATE TABLE IF NOT EXISTS timetable.classes (
               id SERIAL PRIMARY KEY,
               org_id INTEGER,
               name VARCHAR(255),

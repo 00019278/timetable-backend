@@ -2,8 +2,6 @@ package com.sarmich.timetable.exception;
 
 import com.sarmich.timetable.exception.handler.ErrorCode;
 
-
-
 public class UpdateForbiddenException extends ForbiddenException {
   private ErrorCode code = ErrorCode.UPDATE_FORBIDDEN_ERROR_CODE;
 

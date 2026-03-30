@@ -1,10 +1,7 @@
 package com.sarmich.timetable.exception;
 
 import com.sarmich.timetable.exception.handler.ErrorCode;
-
-
 import com.sarmich.timetable.exception.handler.ExceptionInterface;
-
 
 public class ApiException extends RuntimeException implements ExceptionInterface {
   private ErrorCode code;
