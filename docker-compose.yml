@@ -1,25 +1,51 @@
-version: '3.8'
-
 services:
+  # База данных PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: timetable_db
+    ports:
+      - "5432:5432"
+    networks:
+      - timetable_net
+
+  # Кэш Redis
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    command: redis-server --requirepass M1msoFt
+    ports:
+      - "6379:6379"
+    networks:
+      - timetable_net
+
+  # Твой бэкенд (использует предоставленный Dockerfile)
   backend:
-    container_name: backend
-    image: ${DOCKERHUB_USERNAME}/${DOCKERHUB_API_REPO}:backend-latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend_app
     ports:
       - "8080:8080"
+      - "8081:8081"
     environment:
-      POSTGRES_SERVER: $POSTGRES_SERVER
-      POSTGRES_USER: $POSTGRES_USER
-      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: $REDIS_PASSWORD
-    restart: on-failure
+      - SPRING_PROFILES_ACTIVE=dev
+      # ВАЖНО: внутри сети Docker обращаемся к 'db' и 'redis', а не к 'localhost'
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/timetable_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=secret
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=M1msoFt
+    depends_on:
+      - db
+      - redis
     networks:
-      - timetable
-    volumes:
-      - /log:/opt/log
-      - /files:/files
+      - timetable_net
 
 networks:
-  timetable:
-    external: true
+  timetable_net:
+    driver: bridge
