@@ -3,17 +3,12 @@ package com.sarmich.timetable.service.solver;
 import com.google.ortools.sat.BoolVar;
 import com.google.ortools.sat.CpModel;
 import com.google.ortools.sat.IntVar;
-import com.sarmich.timetable.domain.enums.RoomType;
-import com.sarmich.timetable.model.TimeSlot;
-import com.sarmich.timetable.model.response.ClassResponse;
-import com.sarmich.timetable.model.response.OrTLesson;
-import com.sarmich.timetable.model.response.RoomResponse;
-import com.sarmich.timetable.model.response.TeacherResponse;
+import com.google.ortools.sat.IntervalVar;
+import com.google.ortools.util.Domain;
+import com.sarmich.timetable.model.response.*;
 import com.sarmich.timetable.utils.Util;
-import java.time.DayOfWeek;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.IntStream;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
@@ -23,235 +18,275 @@ public class VariableFactory {
 
   public ModelVariables createVariables(CpModel model, ModelData data) {
     ModelVariables variables = new ModelVariables();
-    createVariablesWithBlockSupport(model, variables, data);
+    int totalHours = data.getHoursCount();
+    int hoursPerDay = data.getHoursPerDay();
 
-    log.info(
-        "Created {} assignment variables (boolean) for the model.",
-        variables.getAssignmentVars().size());
-    return variables;
-  }
+    // 1. Convert Availabilities to Fixed Intervals (TimeOffs)
+    processFixedIntervals(model, variables, data);
 
-  private void createVariablesWithBlockSupport(
-      CpModel model, ModelVariables variables, ModelData data) {
-
+    // 2. Create Lesson Variables
     for (OrTLesson lesson : data.getLessons()) {
-      // 1. Period (Dars davomiyligi) tekshiruvi
-      final int period = Util.getNotNull(lesson.period(), 1);
-      if (period < 1) continue;
-
-      // 2. Chastotani aniqlash (Weekly, Bi-weekly, etc.)
+      final int duration = Util.getNotNull(lesson.period(), 1);
       LessonFrequency freq = Util.getNotNull(lesson.frequency(), LessonFrequency.WEEKLY);
 
-      // 3. Indekslarni olish
       Integer cIdx = data.getClassIdToIndex().get(lesson.classInfo().id());
       Integer tIdx = data.getTeacherIdToIndex().get(lesson.teacher().id());
       Integer sIdx = data.getSubjectIdToIndex().get(lesson.subject().id());
 
-      // Agar resurslar (o'qituvchi, sinf, fan) o'chirilgan bo'lsa, tashlab ketamiz
       if (cIdx == null || tIdx == null || sIdx == null) {
-        log.warn("Skipping lesson ID {} due to missing resource index.", lesson.id());
+        log.warn("Missing index for lesson ID: {}", lesson.id());
         continue;
       }
 
-      ClassResponse classObj = data.getClassIndexToObj().get(cIdx);
       TeacherResponse teacherObj = data.getTeacherIndexToObj().get(tIdx);
+      SubjectResponse subjectObj = data.getSubjectIndexToObj().get(sIdx);
 
-      // --- YANGI QISM: HAFTA O'ZGARUVCHISI (Shared Week Variable) ---
-      IntVar sharedWeekVar = null;
+      // 2.1 Domain Calculation (handling Subject TimeOffs and Day Boundaries)
+      Domain allowedStarts = calculateAllowedStarts(subjectObj, totalHours, hoursPerDay, duration);
 
-      if (freq != LessonFrequency.WEEKLY) {
-        // A) Agar darsda SYNC_ID bo'lsa (Parallel guruhlar), umumiy mapdan qidiramiz
-        if (lesson.syncId() != null
-            && variables.getSyncIdToWeekVar().containsKey(lesson.syncId())) {
-          sharedWeekVar = variables.getSyncIdToWeekVar().get(lesson.syncId());
-        }
-        // B) Agar dars ID bo'yicha oldin yaratilgan bo'lsa (bitta darsning turli slotlari uchun)
-        else if (variables.getLessonIdToWeekVar().containsKey(lesson.id())) {
-          sharedWeekVar = variables.getLessonIdToWeekVar().get(lesson.id());
-        }
-        // C) Yaratilmagan bo'lsa, yangisini yaratamiz
-        else {
-          String weekVarName = String.format("week_l%d", lesson.id());
-          // Masalan, Bi-weekly uchun 0..1 oralig'ida
-          sharedWeekVar = model.newIntVar(0, freq.cycleLength - 1, weekVarName);
-        }
+      // 2.2 Create Start Var
+      String startName = "start_l" + lesson.id();
+      IntVar startVar = model.newIntVarFromDomain(allowedStarts, startName);
+      variables.getLessonStartVars().put(lesson.id(), startVar);
 
-        // Yaratilgan yoki olingan o'zgaruvchini KESHLARGA saqlaymiz
-        variables.getLessonIdToWeekVar().put(lesson.id(), sharedWeekVar);
-        if (lesson.syncId() != null) {
-          variables.getSyncIdToWeekVar().put(lesson.syncId(), sharedWeekVar);
-        }
+      // 2.3 Create End Var (Redundant but explicit)
+      // End = Start + Duration. We don't necessarily need a variable if we use Fixed
+      // Duration intervals
+      // but OrTools accepts LinearExpr for size/end. We'll use fixed size int.
+
+      // 2.4 Handle Week Parity (Bi-Weekly)
+      boolean isBiWeekly = (freq == LessonFrequency.BI_WEEKLY);
+
+      BoolVar weekALit = null; // True if occurs in Week A
+      if (isBiWeekly) {
+        IntVar weekVar = getOrCreateWeekVar(model, variables, lesson, freq);
+        weekALit = model.newBoolVar("is_week_A_l" + lesson.id());
+        // weekVar == 0 <-> weekALit is True
+        model.addEquality(weekVar, 0).onlyEnforceIf(weekALit);
+        model.addEquality(weekVar, 1).onlyEnforceIf(weekALit.not());
       }
 
-      // 4. Barcha mumkin bo'lgan soatlar (slots) bo'yicha aylanish
-      for (int h_start = 0; h_start < data.getHoursCount(); h_start++) {
+      // 2.5 Create Interval(s)
+      String intervalName = "interval_l" + lesson.id();
 
-        // A. Blok sig'ishini tekshirish (Masalan, kun oxiriga 2 soatlik dars sig'adimi?)
-        if (!isValidStartingSlot(h_start, period, data.getHoursPerDay())) {
-          continue;
-        }
+      if (!isBiWeekly) {
+        // Weekly: Occurs in BOTH A and B (conceptually) or simply on the timeline.
+        // Since we use separate lists for A and B NoOverlap, we must add this interval
+        // to BOTH.
+        IntervalVar interval = model.newFixedSizeIntervalVar(startVar, duration, intervalName);
+        variables.getLessonIntervalVars().put(lesson.id(), interval);
 
-        // B. O'qituvchi va Sinfning umumiy bo'sh vaqtini tekshirish
-        if (!areTeacherAndClassAvailableForBlock(
-            classObj, teacherObj, h_start, period, data.getHoursPerDay())) {
-          continue;
-        }
+        // Add to Teacher resource lists (Both A and B)
+        variables.addTeacherIntervalA(tIdx, interval);
+        variables.addTeacherIntervalB(tIdx, interval);
 
-        // C. Xonalarni tekshirish va O'zgaruvchi (BoolVar) yaratish
-        if (data.isUseRooms()) {
-          for (RoomResponse room : data.getAllRooms()) {
-            // Xona darsga mosmi (laboratoriya, oddiy) va shu vaqtda ochiqmi?
-            if (isLessonPlacementValid(lesson, room)
-                && isRoomAvailableForBlock(room, h_start, period, data.getHoursPerDay())) {
-
-              createBoolVarForBlock(
-                  model,
-                  variables,
-                  cIdx,
-                  tIdx,
-                  sIdx,
-                  h_start,
-                  room.id(),
-                  period,
-                  sharedWeekVar,
-                  lesson.id());
-            }
-          }
+        // Class & Group Logic
+        if (lesson.group() != null) {
+          Integer gIdx = lesson.group().id();
+          variables.addGroupIntervalA(gIdx, interval);
+          variables.addGroupIntervalB(gIdx, interval);
+          // Do NOT add to ClassIntervalsA/B.
+          // Instead, we will enforce NoOverlap(Group + Class) in HardConstraints.
         } else {
-          // Xonasiz rejim (r=0)
-          createBoolVarForBlock(
-              model, variables, cIdx, tIdx, sIdx, h_start, 0, period, sharedWeekVar, lesson.id());
+          variables.addClassIntervalA(cIdx, interval);
+          variables.addClassIntervalB(cIdx, interval);
+        }
+
+        if (data.isUseRooms() && lesson.rooms() != null && !lesson.rooms().isEmpty()) {
+          // Xonalar bilan ishlash:
+          // 1. Agar faqat bitta xona bo'lsa - to'g'ridan-to'g'ri intervalga qo'shamiz
+          // 2. Agar bir nechta xona bo'lsa - birinchisini (eng yuqori prioritetli)
+          // tanlaymiz
+          // (Post-processing da boshqa xona tanlash mumkin, lekin NoOverlap uchun
+          // kamida bitta xonani band qilishimiz kerak)
+
+          // Birinchi xonani olamiz (prioritet bo'yicha eng yaxshisi)
+          RoomResponse primaryRoom = lesson.rooms().get(0);
+          Integer roomId = primaryRoom.id();
+
+          // Xona intervalini qo'shamiz
+          variables.addRoomIntervalA(roomId, interval);
+          variables.addRoomIntervalB(roomId, interval);
+        }
+      } else {
+        // Bi-Weekly: Occurs in A OR B
+        // Interval A: Present if weekALit
+        IntervalVar intervalA =
+            model.newOptionalFixedSizeIntervalVar(
+                startVar, duration, weekALit, intervalName + "_A");
+
+        // Interval B: Present if !weekALit
+        IntervalVar intervalB =
+            model.newOptionalFixedSizeIntervalVar(
+                startVar, duration, weekALit.not(), intervalName + "_B");
+
+        // Note: We don't put these into 'lessonIntervalVars' as a single entry easily.
+        // Maybe just put A? Or maintain a map for debug?
+        variables.getLessonIntervalVars().put(lesson.id(), intervalA); // Just storing one for ref
+
+        variables.addTeacherIntervalA(tIdx, intervalA);
+        variables.addTeacherIntervalB(tIdx, intervalB);
+
+        if (lesson.group() != null) {
+          Integer gIdx = lesson.group().id();
+          variables.addGroupIntervalA(gIdx, intervalA);
+          variables.addGroupIntervalB(gIdx, intervalB);
+        } else {
+          variables.addClassIntervalA(cIdx, intervalA);
+          variables.addClassIntervalB(cIdx, intervalB);
+        }
+
+        // Bi-Weekly darslar uchun ham xona intervallarini qo'shamiz
+        if (data.isUseRooms() && lesson.rooms() != null && !lesson.rooms().isEmpty()) {
+          RoomResponse primaryRoom = lesson.rooms().get(0);
+          Integer roomId = primaryRoom.id();
+          variables.addRoomIntervalA(roomId, intervalA);
+          variables.addRoomIntervalB(roomId, intervalB);
+        }
+      }
+    }
+
+    return variables;
+  }
+
+  private void processFixedIntervals(CpModel model, ModelVariables vars, ModelData data) {
+    // 1. Teachers
+    for (int tIdx = 0; tIdx < data.getUniqueTeachers().size(); tIdx++) {
+      TeacherResponse t = data.getTeacherIndexToObj().get(tIdx);
+      List<IntervalVar> gaps =
+          createGapIntervals(
+              model, t.availabilities(), data.getHoursPerDay(), data.getDays(), "teacher_" + tIdx);
+      for (IntervalVar gap : gaps) {
+        vars.addTeacherIntervalA(tIdx, gap);
+        vars.addTeacherIntervalB(tIdx, gap);
+      }
+    }
+
+    // 2. Classes
+    for (int cIdx = 0; cIdx < data.getUniqueClasses().size(); cIdx++) {
+      ClassResponse c = data.getClassIndexToObj().get(cIdx);
+      List<IntervalVar> gaps =
+          createGapIntervals(
+              model, c.availabilities(), data.getHoursPerDay(), data.getDays(), "class_" + cIdx);
+      for (IntervalVar gap : gaps) {
+        vars.addClassIntervalA(cIdx, gap);
+        vars.addClassIntervalB(cIdx, gap);
+      }
+    }
+
+    // 3. Rooms (If needed, check room availabilities)
+    if (data.isUseRooms()) {
+      // Handle if rooms have availabilities
+      for (Map.Entry<Integer, RoomResponse> entry : data.getRoomIndexToObj().entrySet()) {
+        RoomResponse room = entry.getValue();
+        List<IntervalVar> gaps =
+            createGapIntervals(
+                model,
+                room.availabilities(),
+                data.getHoursPerDay(),
+                data.getDays(),
+                "room_" + room.id());
+        for (IntervalVar gap : gaps) {
+          vars.addRoomIntervalA(room.id(), gap);
+          vars.addRoomIntervalB(room.id(), gap);
         }
       }
     }
   }
 
-  // --- O'zgaruvchi yaratish va Keshlash ---
-
-  private void createBoolVarForBlock(
+  // Creates FixedIntervals for periods where the resource is NOT available.
+  // "Crucial: Group consecutive TimeOff hours into a single Fixed Interval"
+  private List<IntervalVar> createGapIntervals(
       CpModel model,
-      ModelVariables vars,
-      int c,
-      int t,
-      int s,
-      int h_start,
-      int r,
-      int period,
-      IntVar weekVar,
-      int lessonId) {
+      List<com.sarmich.timetable.model.TimeSlot> availabilities,
+      int hpd,
+      int days,
+      String prefix) {
+    List<IntervalVar> intervals = new ArrayList<>();
 
-    // Unique Key generatsiyasi.
-    // Format: c{class}_t{teacher}_s{subject}_h{hour}_r{room}_p{period}_l{lessonId}
-    String varKey =
-        String.format("c%d_t%d_s%d_h%d_r%d_p%d_l%d", c, t, s, h_start, r, period, lessonId);
+    // Fix: Treat null OR EMPTY list as "Full Availability" (No Gaps).
+    // Previously, empty list resulted in 'isAvailable' staying all false, causing a
+    // 100% block.
+    if (availabilities == null || availabilities.isEmpty()) return intervals;
 
-    // Asosiy BoolVar ("Shu variant tanlandimi?")
-    BoolVar blockAssignment = model.newBoolVar(varKey);
-    vars.getAssignmentVars().put(varKey, blockAssignment);
-
-    // 1. Hafta o'zgaruvchisini bog'lash (Bi-weekly uchun)
-    if (weekVar != null) {
-      vars.getLessonWeekVars().put(varKey, weekVar);
-    }
-
-    // 2. YANGI: Ketma-ketlik (Sequential) uchun dars boshlanish vaqtini saqlash
-    // Key: "105_2" -> Dars ID 105, 2-soatda boshlanyapti
-    String startKey = lessonId + "_" + h_start;
-    vars.getLessonStartVars()
-        .computeIfAbsent(startKey, k -> new ArrayList<>())
-        .add(blockAssignment);
-
-    // 3. Tezkor qidiruv uchun keshlarni to'ldirish
-    for (int k = 0; k < period; k++) {
-      int currentHour = h_start + k;
-
-      // O'qituvchi jadvali uchun
-      vars.getLessonsByTeacherHour()
-          .computeIfAbsent(t + "_" + currentHour, key -> new ArrayList<>())
-          .add(blockAssignment);
-
-      // Sinf jadvali uchun
-      vars.getLessonsByClassHour()
-          .computeIfAbsent(c + "_" + currentHour, key -> new ArrayList<>())
-          .add(blockAssignment);
-
-      // Xona jadvali uchun (faqat haqiqiy xona bo'lsa)
-      if (r > 0 || vars.getLessonsByRoomHour().containsKey(r + "_" + currentHour)) {
-        vars.getLessonsByRoomHour()
-            .computeIfAbsent(r + "_" + currentHour, key -> new ArrayList<>())
-            .add(blockAssignment);
+    // Convert availability slots to a boolean array of "Is Available"
+    boolean[] isAvailable = new boolean[days * hpd]; // default false
+    // Fill available slots
+    for (com.sarmich.timetable.model.TimeSlot slot : availabilities) {
+      // slot.dayOfWeek (1-7), slot.lessons (1-based indexes)
+      int dIndex = slot.dayOfWeek().getValue() - 1;
+      if (dIndex >= 0 && dIndex < days) {
+        for (Integer lessonIdx : slot.lessons()) {
+          int hIndex = lessonIdx - 1;
+          if (hIndex >= 0 && hIndex < hpd) {
+            isAvailable[dIndex * hpd + hIndex] = true;
+          }
+        }
       }
     }
 
-    // Darslar sonini sanash (Count Constraints) uchun guruhlash
-    vars.getLessonsByClassTeacherSubject()
-        .computeIfAbsent(c + "_" + t + "_" + s, key -> new ArrayList<>())
-        .add(blockAssignment);
-  }
-
-  // --- Yordamchi Metodlar (Validatsiya) ---
-
-  private boolean isValidStartingSlot(int startHour, int period, int hoursPerDay) {
-    if (period == 1) return true;
-    // Dars kun chegarasidan o'tib ketmasligi kerak (Masalan, Juma tugab, Shanbaga o'tmasin)
-    return (startHour % hoursPerDay) + period <= hoursPerDay;
-  }
-
-  private boolean areTeacherAndClassAvailableForBlock(
-      ClassResponse classObj,
-      TeacherResponse teacherObj,
-      int startHour,
-      int period,
-      int hoursPerDay) {
-    // Blokning barcha soatlarida (period davomida) o'qituvchi va sinf bo'sh bo'lishi kerak
-    for (int k = 0; k < period; k++) {
-      if (!isAvailable(classObj, teacherObj, startHour + k, hoursPerDay)) {
-        return false;
+    // Find gaps (sequences of false)
+    int start = -1;
+    for (int i = 0; i < isAvailable.length; i++) {
+      if (!isAvailable[i]) {
+        if (start == -1) start = i;
+      } else {
+        if (start != -1) {
+          // Gap ended at i-1
+          intervals.add(model.newFixedInterval(start, i - start, prefix + "_off_" + start));
+          start = -1;
+        }
       }
     }
-    return true;
+    if (start != -1) {
+      intervals.add(
+          model.newFixedInterval(start, isAvailable.length - start, prefix + "_off_" + start));
+    }
+
+    return intervals;
   }
 
-  private boolean isRoomAvailableForBlock(
-      RoomResponse room, int startHour, int period, int hoursPerDay) {
-    for (int k = 0; k < period; k++) {
-      if (!isAvailableAtHour(room.availabilities(), startHour + k, hoursPerDay)) {
-        return false;
+  private Domain calculateAllowedStarts(
+      SubjectResponse subject, int totalHours, int hpd, int duration) {
+    List<Long> forcedGaps = new ArrayList<>(); // Indices that are NOT allowed
+
+    // 1. Day Boundaries: A lesson cannot start at hour H if it spans across
+    // midnight/day-boundary
+    // i.e., defined by (h % hpd) + duration <= hpd
+    for (int h = 0; h < totalHours; h++) {
+      if ((h % hpd) + duration > hpd) {
+        forcedGaps.add((long) h);
       }
     }
-    return true;
-  }
 
-  private boolean isLessonPlacementValid(OrTLesson lesson, RoomResponse room) {
-    List<Integer> requiredRoomIds =
-        Util.getNotNull(lesson.rooms(), Collections.<RoomResponse>emptyList()).stream()
-            .map(RoomResponse::id)
-            .toList();
+    // 2. Subject Unavailability (if any - implicit in request "For Subjects with
+    // TimeOff")
+    // NOTE: Subject object in code doesn't typically have "Availabilities" field
+    // based on API,
+    // but if it did, logic is same. Assuming currently no subject availability
+    // field in provided context objects,
+    // but if logic requires it, we'd check it here. Skipping for now as
+    // SubjectResponse doesn't show it.
 
-    if (!requiredRoomIds.isEmpty()) {
-      return requiredRoomIds.contains(room.id());
-    } else {
-      return room.type() == RoomType.SHARED;
+    Domain allowed = Domain.fromValues(IntStream.range(0, totalHours).mapToLong(i -> i).toArray());
+    if (!forcedGaps.isEmpty()) {
+      Domain forbidden = Domain.fromValues(forcedGaps.stream().mapToLong(l -> l).toArray());
+      allowed =
+          Domain.fromValues(IntStream.range(0, totalHours).mapToLong(i -> i).toArray())
+              .intersectionWith(forbidden.complement()); // Effectively Allowed - Forbidden
     }
+
+    return allowed;
   }
 
-  private boolean isAvailable(
-      ClassResponse classObj, TeacherResponse teacherObj, int hourIndex, int hoursPerDay) {
-    return isAvailableAtHour(classObj.availabilities(), hourIndex, hoursPerDay)
-        && isAvailableAtHour(teacherObj.availabilities(), hourIndex, hoursPerDay);
-  }
+  private IntVar getOrCreateWeekVar(CpModel m, ModelVariables v, OrTLesson l, LessonFrequency f) {
+    if (l.syncId() != null && v.getSyncIdToWeekVar().containsKey(l.syncId()))
+      return v.getSyncIdToWeekVar().get(l.syncId());
+    if (v.getLessonWeekVars().containsKey(l.id())) return v.getLessonWeekVars().get(l.id());
 
-  private boolean isAvailableAtHour(List<TimeSlot> availabilities, int hourIndex, int hoursPerDay) {
-    // Agar availability bo'sh bo'lsa, demak har doim bo'sh
-    if (availabilities == null || availabilities.isEmpty()) return true;
-
-    // Global soat (0..40) dan Hafta kuni va Kun soatini ajratib olamiz
-    DayOfWeek currentDay = DayOfWeek.of((hourIndex / hoursPerDay) + 1);
-    int currentHourOfDay = (hourIndex % hoursPerDay) + 1;
-
-    // Ro'yxatdan qidiramiz
-    return availabilities.stream()
-        .anyMatch(
-            slot -> slot.dayOfWeek() == currentDay && slot.lessons().contains(currentHourOfDay));
+    IntVar w = m.newIntVar(0, 1, "week_l" + l.id()); // Only 0 or 1 for Bi-Weekly
+    v.getLessonWeekVars().put(l.id(), w);
+    if (l.syncId() != null) v.getSyncIdToWeekVar().put(l.syncId(), w);
+    return w;
   }
 }

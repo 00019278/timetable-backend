@@ -9,5 +9,4 @@ public record TimetableFullResponse(
     List<TeacherResponse> teachers,
     List<SubjectResponse> subjects,
     List<RoomResponse> rooms,
-    List<GroupResponse> groups
-) {}
+    List<GroupResponse> groups) {}

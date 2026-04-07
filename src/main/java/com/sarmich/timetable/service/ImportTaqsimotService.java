@@ -184,12 +184,12 @@ public class ImportTaqsimotService {
             groupDetails.add(
                 new GroupLessonDetail(
                     group.getId(), l.getTeacherId(), l.getSubjectId(), l.getRoomIds()));
-            
+
             if (i > 0) {
-               if (l.getId() != null) {
-                   l.setDeleted(true);
-                   finalLessonsToSave.add(l);
-               }
+              if (l.getId() != null) {
+                l.setDeleted(true);
+                finalLessonsToSave.add(l);
+              }
             }
           }
           mainLesson.setGroupDetails(groupDetails);
@@ -204,9 +204,7 @@ public class ImportTaqsimotService {
     if (!finalLessonsToSave.isEmpty()) {
       lessonRepository.saveAll(finalLessonsToSave);
       log.info(
-          "Successfully saved {} lessons for organization {}.",
-          finalLessonsToSave.size(),
-          orgId);
+          "Successfully saved {} lessons for organization {}.", finalLessonsToSave.size(), orgId);
     }
   }
 
@@ -269,9 +267,7 @@ public class ImportTaqsimotService {
   }
 
   private GroupEntity ensureGroup(Integer orgId, Integer classId, String name) {
-    return groupRepository
-        .findAllByClassIdAndOrgIdAndDeletedFalse(classId, orgId)
-        .stream()
+    return groupRepository.findAllByClassIdAndOrgIdAndDeletedFalse(classId, orgId).stream()
         .filter(g -> g.getName().equalsIgnoreCase(name))
         .findFirst()
         .orElseGet(

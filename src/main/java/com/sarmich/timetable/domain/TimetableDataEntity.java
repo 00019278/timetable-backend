@@ -19,34 +19,35 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Table(schema = Constants.SCHEMA, name = Constants.TABLE_TIMETABLE_DATA)
 @EntityListeners(AuditingEntityListener.class)
 public class TimetableDataEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
+  private UUID id;
 
-    private UUID timetableId;
+  private UUID timetableId;
 
-    // Bu qator rejalashtirilgan slotmi yoki unscheduled (sig'magan) darsmi?
-    private Boolean isScheduled = Boolean.TRUE;
+  // Bu qator rejalashtirilgan slotmi yoki unscheduled (sig'magan) darsmi?
+  private Boolean isScheduled = Boolean.TRUE;
 
-    // Asosiy bog'lamalar (Faqat Sinf darajasida qoladi)
-    private Integer classId;
-    // teacherId, subjectId, roomId, groupId -> OLIB TASHLANDI (JSON ichida bo'ladi)
+  // Asosiy bog'lamalar (Faqat Sinf darajasida qoladi)
+  private Integer classId;
 
-    @Enumerated(EnumType.STRING)
-    private DayOfWeek dayOfWeek;
+  // teacherId, subjectId, roomId, groupId -> OLIB TASHLANDI (JSON ichida bo'ladi)
 
-    private Integer hour;
-    private Integer weekIndex; // 0, 1 yoki null
+  @Enumerated(EnumType.STRING)
+  private DayOfWeek dayOfWeek;
 
-    // --- ENG MUHIM O'ZGARISH ---
-    // Slot ichidagi barcha darslar ro'yxati shu yerda saqlanadi.
-    @JdbcTypeCode(SqlTypes.JSON)
-    private List<TimetableGroupDetail> slotDetails;
+  private Integer hour;
+  private Integer weekIndex; // 0, 1 yoki null
 
-    // Unscheduled darslar uchun (agar isScheduled = false bo'lsa)
-    // Bu ro'yxat bo'lishi ham mumkin, yoki bitta dona object
-    @JdbcTypeCode(SqlTypes.JSON)
-    private UnscheduledLesson unscheduledData;
+  // --- ENG MUHIM O'ZGARISH ---
+  // Slot ichidagi barcha darslar ro'yxati shu yerda saqlanadi.
+  @JdbcTypeCode(SqlTypes.JSON)
+  private List<TimetableGroupDetail> slotDetails;
 
-    private Integer version = 1;
+  // Unscheduled darslar uchun (agar isScheduled = false bo'lsa)
+  // Bu ro'yxat bo'lishi ham mumkin, yoki bitta dona object
+  @JdbcTypeCode(SqlTypes.JSON)
+  private UnscheduledLesson unscheduledData;
+
+  private Integer version = 1;
 }

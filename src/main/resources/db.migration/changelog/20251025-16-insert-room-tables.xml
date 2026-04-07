@@ -4,7 +4,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
-    <changeSet id="create-tables" author="00019278">
+    <changeSet id="create-tables" author="00019228">
         <sql>
 
             INSERT INTO timetable.room (id, org_id, name, short_name, availabilities, created_by, deleted, created_date, updated_date, building_id, type) VALUES (4, 2, '104', '104', '[{"lessons": [1, 2, 3, 4, 5, 6, 7], "dayOfWeek": "MONDAY"}, {"lessons": [1, 2, 3, 4, 5, 6, 7], "dayOfWeek": "TUESDAY"}, {"lessons": [1, 2, 3, 4, 5, 6, 7], "dayOfWeek": "WEDNESDAY"}, {"lessons": [1, 2, 3, 4, 5, 6, 7], "dayOfWeek": "THURSDAY"}, {"lessons": [1, 2, 3, 4, 5, 6, 7], "dayOfWeek": "FRIDAY"}, {"lessons": [1, 2, 3, 4, 5, 6, 7], "dayOfWeek": "SATURDAY"}, {"lessons": [1, 2, 3, 4, 5, 6, 7], "dayOfWeek": "SUNDAY"}]', null, false, '2025-10-28 19:49:38.958230', '2025-10-28 19:49:38.958230', null, null);

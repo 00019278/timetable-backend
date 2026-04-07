@@ -25,7 +25,7 @@ public abstract class LessonMapper {
   // Manual mapping might be needed if MapStruct cannot figure out ID mapping automatically
   // But here we are passing Objects to toResponse, and LessonResponse expects IDs.
   // So we need to map those objects to IDs.
-  
+
   @Mapping(target = "id", source = "entity.id")
   @Mapping(target = "createdDate", source = "entity.createdDate")
   @Mapping(target = "updatedDate", source = "entity.updatedDate")
@@ -35,7 +35,10 @@ public abstract class LessonMapper {
   @Mapping(target = "subjectId", source = "subject.id")
   @Mapping(target = "groupId", source = "group.id")
   // List<RoomResponse> rooms -> List<Integer> roomIds
-  @Mapping(target = "roomIds", expression = "java(rooms != null ? rooms.stream().map(com.sarmich.timetable.model.response.RoomResponse::id).toList() : null)")
+  @Mapping(
+      target = "roomIds",
+      expression =
+          "java(rooms != null ? rooms.stream().map(com.sarmich.timetable.model.response.RoomResponse::id).toList() : null)")
   @Mapping(target = "groupDetails", source = "groupDetails")
   public abstract LessonResponse toResponse(
       LessonEntity entity,

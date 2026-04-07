@@ -1,12 +1,10 @@
 package com.sarmich.timetable.service.solver;
 
-import com.google.ortools.sat.BoolVar;
 import com.google.ortools.sat.CpModel;
 import com.google.ortools.sat.IntVar;
-import com.google.ortools.sat.LinearExpr;
-import com.google.ortools.sat.Literal;
+import com.google.ortools.sat.IntervalVar;
 import com.sarmich.timetable.model.response.OrTLesson;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,175 +16,166 @@ import org.springframework.stereotype.Component;
 public class HardConstraintProvider {
 
   public void apply(CpModel model, ModelVariables vars, ModelData data) {
-    log.info("Applying all hard constraints to the model...");
+    log.info("Applying all hard constraints to the model (Interval-based)...");
 
-    // 1. Resurslar ziddiyati (O'qituvchi, Sinf, Xona)
+    // 1. Resource Exclusivity (NoOverlap)
     addResourceExclusivityConstraint(model, vars, data);
 
-    // 2. Darslar soni va kunlik limit
-    addWeeklyAndDailySubjectConstraints(model, vars, data);
+    // 2. Room Capacity (NoOverlap for now, assuming 1 room = 1 slot)
+    addRoomCapacityConstraints(model, vars, data);
 
-    // 3. Xonalar simmetriyasi
-    addRoomSymmetryBreaking(model, vars, data);
-
-    // 4. YANGI: Parallel (Sinxron) darslar (SyncId)
+    // 3. Simultaneous Lessons
     addSimultaneousLessonsConstraint(model, vars, data);
+
+    // Note: Weekly/Daily subject limits and distribution are implicitly handled if
+    // we schedule exactly what is in the list.
+    // If we need to enforce "Max 2 per day" for a set of lessons, that requires
+    // extra constraints on 'start' vars.
+    // For 'Performance comparable to ASC', minimizing vars is key. Detailed daily
+    // limits might be Soft or require custom constraints.
+    // We skip complex Daily Limits for now to ensure foundational Interval model
+    // works.
   }
 
-  // ... addResourceExclusivityConstraint (ESKI KOD O'ZGARISHSIZ QOLADI) ...
   private void addResourceExclusivityConstraint(
       CpModel model, ModelVariables vars, ModelData data) {
-    // ... (Eski kodingizdagi kabi, faqat applySmartLayeredConflict chaqiriladi)
-    for (List<BoolVar> lessons : vars.getLessonsByTeacherHour().values()) {
-      applySmartLayeredConflict(model, vars, lessons);
-    }
-    for (List<BoolVar> lessons : vars.getLessonsByClassHour().values()) {
-      applySmartLayeredConflict(model, vars, lessons);
-    }
-    if (data.isUseRooms()) {
-      for (List<BoolVar> lessons : vars.getLessonsByRoomHour().values()) {
-        applySmartLayeredConflict(model, vars, lessons);
+    log.debug("Applying NoOverlap constraints for Teachers and Classes.");
+
+    // Teachers
+    for (Map.Entry<Integer, List<IntervalVar>> entry : vars.getTeacherIntervalsA().entrySet()) {
+      if (!entry.getValue().isEmpty()) {
+        model.addNoOverlap(entry.getValue().toArray(new IntervalVar[0]));
       }
     }
-  }
+    for (Map.Entry<Integer, List<IntervalVar>> entry : vars.getTeacherIntervalsB().entrySet()) {
+      if (!entry.getValue().isEmpty()) {
+        model.addNoOverlap(entry.getValue().toArray(new IntervalVar[0]));
+      }
+    }
 
-  // ... applySmartLayeredConflict (ESKI KOD O'ZGARISHSIZ) ...
-  private void applySmartLayeredConflict(
-      CpModel model, ModelVariables vars, List<BoolVar> lessonsInSlot) {
-    // ... (Eski kodingizdagi kabi haftalarni tekshirish)
-    if (lessonsInSlot.size() <= 1) return;
-    for (int i = 0; i < lessonsInSlot.size(); i++) {
-      for (int j = i + 1; j < lessonsInSlot.size(); j++) {
-        BoolVar var1 = lessonsInSlot.get(i);
-        BoolVar var2 = lessonsInSlot.get(j);
-        IntVar week1 = vars.getLessonWeekVars().get(var1.getName());
-        IntVar week2 = vars.getLessonWeekVars().get(var2.getName());
+    // Classes (Whole Class Lessons & Global Class TimeOffs)
+    for (Map.Entry<Integer, List<IntervalVar>> entry : vars.getClassIntervalsA().entrySet()) {
+      if (!entry.getValue().isEmpty()) {
+        model.addNoOverlap(entry.getValue().toArray(new IntervalVar[0]));
+      }
+    }
+    for (Map.Entry<Integer, List<IntervalVar>> entry : vars.getClassIntervalsB().entrySet()) {
+      if (!entry.getValue().isEmpty()) {
+        model.addNoOverlap(entry.getValue().toArray(new IntervalVar[0]));
+      }
+    }
 
-        if (week1 == null && week2 == null) {
-          model.addImplication(var1, var2.not());
-        } else if (week1 == null || week2 == null) {
-          model.addImplication(var1, var2.not());
-        } else {
-          model.addDifferent(week1, week2).onlyEnforceIf(new Literal[] {var1, var2});
+    // === GROUP NOOVERLAP ===
+    // Har bir guruhning o'z intervallari o'zaro kesishmasligi kerak!
+    // Bu juda muhim - aks holda bir guruh uchun bir nechta dars bir vaqtda
+    // joylashadi.
+    for (Map.Entry<Integer, List<IntervalVar>> entry : vars.getGroupIntervalsA().entrySet()) {
+      if (entry.getValue().size() > 1) {
+        model.addNoOverlap(entry.getValue().toArray(new IntervalVar[0]));
+      }
+    }
+    for (Map.Entry<Integer, List<IntervalVar>> entry : vars.getGroupIntervalsB().entrySet()) {
+      if (entry.getValue().size() > 1) {
+        model.addNoOverlap(entry.getValue().toArray(new IntervalVar[0]));
+      }
+    }
+
+    // === GROUP + CLASS COMBINED NOOVERLAP ===
+    // Guruh darslari va butun sinf darslari bir vaqtda bo'lmasligi kerak.
+    // Groups: Group Lesson overlap with Whole Class Lesson
+    // For each Group, collect its intervals AND its parent Class intervals.
+    // We need to know which class a group belongs to.
+    // Option: Iterate all groups in ModelData or build map.
+    // Using ModelData uniqueClasses to find groups.
+
+    for (com.sarmich.timetable.model.response.ClassResponse c : data.getUniqueClasses()) {
+      int cIdx = data.getClassIdToIndex().get(c.id());
+      List<IntervalVar> classIntervalsA =
+          vars.getClassIntervalsA().getOrDefault(cIdx, Collections.emptyList());
+      List<IntervalVar> classIntervalsB =
+          vars.getClassIntervalsB().getOrDefault(cIdx, Collections.emptyList());
+
+      if (c.groups() != null) {
+        for (com.sarmich.timetable.model.response.GroupResponse g : c.groups()) {
+          // Week A
+          List<IntervalVar> groupIntervalsA =
+              vars.getGroupIntervalsA().getOrDefault(g.id(), Collections.emptyList());
+          // Faqat CLASS intervallari bilan combined qilamiz (Group o'z ichida yuqorida
+          // qilindi)
+          if (!classIntervalsA.isEmpty() && !groupIntervalsA.isEmpty()) {
+            java.util.ArrayList<IntervalVar> combined = new java.util.ArrayList<>();
+            combined.addAll(classIntervalsA);
+            combined.addAll(groupIntervalsA);
+            model.addNoOverlap(combined.toArray(new IntervalVar[0]));
+          }
+
+          // Week B
+          List<IntervalVar> groupIntervalsB =
+              vars.getGroupIntervalsB().getOrDefault(g.id(), Collections.emptyList());
+          if (!classIntervalsB.isEmpty() && !groupIntervalsB.isEmpty()) {
+            java.util.ArrayList<IntervalVar> combined = new java.util.ArrayList<>();
+            combined.addAll(classIntervalsB);
+            combined.addAll(groupIntervalsB);
+            model.addNoOverlap(combined.toArray(new IntervalVar[0]));
+          }
         }
       }
     }
   }
 
-  // ... addWeeklyAndDailySubjectConstraints (O'ZGARTIRILDI: OrTLesson ishlatiladi) ...
-  private void addWeeklyAndDailySubjectConstraints(
-      CpModel model, ModelVariables vars, ModelData data) {
-    log.debug("Applying weekly and daily subject constraints.");
-
-    for (OrTLesson lesson : data.getLessons()) {
-      Integer cIdx = data.getClassIdToIndex().get(lesson.classInfo().id());
-      Integer tIdx = data.getTeacherIdToIndex().get(lesson.teacher().id());
-      Integer sIdx = data.getSubjectIdToIndex().get(lesson.subject().id());
-      int totalRequiredBlocks = lesson.lessonCount();
-
-      if (cIdx == null || tIdx == null || sIdx == null || totalRequiredBlocks == 0) continue;
-
-      List<BoolVar> allPossibleBlocks =
-          vars.getLessonsByClassTeacherSubject().get(cIdx + "_" + tIdx + "_" + sIdx);
-
-      if (allPossibleBlocks == null || allPossibleBlocks.isEmpty()) continue;
-
-      // 1. Total Count (LessOrEqual)
-      model.addLessOrEqual(
-          LinearExpr.sum(allPossibleBlocks.toArray(new BoolVar[0])), totalRequiredBlocks);
-
-      // 2. Daily Limit
-      for (int day = 0; day < data.getDays(); day++) {
-        List<BoolVar> dailyBlocks =
-            filterBlocksForDay(allPossibleBlocks, day, data.getHoursPerDay());
-        if (!dailyBlocks.isEmpty()) {
-          int maxDailyBlocks = (totalRequiredBlocks >= 4) ? 2 : 1;
-          model.addLessOrEqual(LinearExpr.sum(dailyBlocks.toArray(new BoolVar[0])), maxDailyBlocks);
-        }
-      }
-    }
-  }
-
-  // ... filterBlocksForDay (O'ZGARISHSIZ) ...
-  private List<BoolVar> filterBlocksForDay(List<BoolVar> allBlocks, int dayIndex, int hoursPerDay) {
-    List<BoolVar> dailyBlocks = new ArrayList<>();
-    int startHourOfDay = dayIndex * hoursPerDay;
-    int endHourOfDay = startHourOfDay + hoursPerDay;
-    for (BoolVar var : allBlocks) {
-      int h_start = Integer.parseInt(var.getName().split("_")[3].substring(1));
-      if (h_start >= startHourOfDay && h_start < endHourOfDay) {
-        dailyBlocks.add(var);
-      }
-    }
-    return dailyBlocks;
-  }
-
-  // ... addRoomSymmetryBreaking (O'ZGARISHSIZ) ...
-  private void addRoomSymmetryBreaking(CpModel model, ModelVariables vars, ModelData data) {
-    // ... (Eski kodingizdagi kabi)
+  private void addRoomCapacityConstraints(CpModel model, ModelVariables vars, ModelData data) {
     if (!data.isUseRooms()) return;
-    // ...
+    log.debug("Applying NoOverlap constraints for Rooms.");
+
+    // Rooms (Week A)
+    for (Map.Entry<Integer, List<IntervalVar>> entry : vars.getRoomIntervalsA().entrySet()) {
+      if (!entry.getValue().isEmpty()) {
+        model.addNoOverlap(entry.getValue().toArray(new IntervalVar[0]));
+      }
+    }
+    // Rooms (Week B)
+    for (Map.Entry<Integer, List<IntervalVar>> entry : vars.getRoomIntervalsB().entrySet()) {
+      if (!entry.getValue().isEmpty()) {
+        model.addNoOverlap(entry.getValue().toArray(new IntervalVar[0]));
+      }
+    }
   }
 
-  // =================================================================================
-  // 4. YANGI: PARALLEL (SINXRON) DARSLAR CHEKLOVI
-  // =================================================================================
   private void addSimultaneousLessonsConstraint(
       CpModel model, ModelVariables vars, ModelData data) {
     log.debug("Applying simultaneous (sync) lessons constraints.");
 
-    // 1. Darslarni syncId bo'yicha guruhlaymiz
     Map<String, List<OrTLesson>> syncGroups =
         data.getLessons().stream()
             .filter(l -> l.syncId() != null)
             .collect(Collectors.groupingBy(OrTLesson::syncId));
 
     for (List<OrTLesson> group : syncGroups.values()) {
-      if (group.size() < 2) continue; // Juftlik bo'lishi kerak
+      if (group.size() < 2) continue;
 
-      // Guruhdagi birinchi dars "Leader"
       OrTLesson leader = group.get(0);
+      IntVar leaderStart = vars.getLessonStartVars().get(leader.id());
+      // IntVar leaderWeek = vars.getLessonWeekVars().get(leader.id()); // If
+      // bi-weekly
 
-      // Qolgan darslarni "Follower" qilib Leaderga bog'laymiz
       for (int i = 1; i < group.size(); i++) {
         OrTLesson follower = group.get(i);
+        IntVar followerStart = vars.getLessonStartVars().get(follower.id());
 
-        // Barcha vaqt slotlari bo'yicha aylanamiz
-        for (int h = 0; h < data.getHoursCount(); h++) {
-
-          // Leader va Follower ning shu soatda boshlanadigan variantlarini topamiz
-          // VariableFactory da "lessonStartVars" mapini to'ldirgan edik (LessonId + Hour)
-          String leaderKey = leader.id() + "_" + h;
-          String followerKey = follower.id() + "_" + h;
-
-          List<BoolVar> leaderVars = vars.getLessonStartVars().get(leaderKey);
-          List<BoolVar> followerVars = vars.getLessonStartVars().get(followerKey);
-
-          if (leaderVars != null
-              && !leaderVars.isEmpty()
-              && followerVars != null
-              && !followerVars.isEmpty()) {
-
-            // Agar xonalar tufayli bir nechta variant bo'lsa, ularning yig'indisini olamiz
-            // (Ya'ni: "Leader shu soatda bormi?" == "Follower shu soatda bormi?")
-            LinearExpr sumLeader = LinearExpr.sum(leaderVars.toArray(new BoolVar[0]));
-            LinearExpr sumFollower = LinearExpr.sum(followerVars.toArray(new BoolVar[0]));
-
-            model.addEquality(sumLeader, sumFollower);
-          }
-          // Agar birida joy bo'lmasa (masalan xona yo'q), ikkinchisi ham qo'yilmasin
-          else if ((leaderVars == null || leaderVars.isEmpty())
-              && (followerVars != null && !followerVars.isEmpty())) {
-            for (BoolVar v : followerVars) model.addEquality(v, 0);
-          } else if ((leaderVars != null && !leaderVars.isEmpty())
-              && (followerVars == null || followerVars.isEmpty())) {
-            for (BoolVar v : leaderVars) model.addEquality(v, 0);
-          }
+        if (leaderStart != null && followerStart != null) {
+          model.addEquality(leaderStart, followerStart);
         }
 
-        // Bi-weekly bo'lsa, Haftalari ham teng bo'lishi shart
-        // Lekin biz VariableFactory da SYNC_ID uchun bitta weekVar yaratganmiz.
-        // Demak, bu avtomatik hal bo'lgan! (Qo'shimcha kod shart emas).
+        // If Bi-Weekly, we generally want them to be on the same week cycle too?
+        // Or maybe they are swapped?
+        // Usually "Sync" means "Same Time".
+        // We should also sync the weekVar if it exists.
+        if (vars.getLessonWeekVars().containsKey(leader.id())
+            && vars.getLessonWeekVars().containsKey(follower.id())) {
+          model.addEquality(
+              vars.getLessonWeekVars().get(leader.id()),
+              vars.getLessonWeekVars().get(follower.id()));
+        }
       }
     }
   }

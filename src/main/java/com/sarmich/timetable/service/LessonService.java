@@ -13,6 +13,7 @@ import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.PageImpl;
@@ -205,10 +206,11 @@ public class LessonService {
     List<Integer> classIds = Util.idList(entities, LessonEntity::getClassId);
     List<Integer> teacherIds = Util.idList(entities, LessonEntity::getTeacherId);
     List<Integer> subjectIds = Util.idList(entities, LessonEntity::getSubjectId);
-    List<Integer> roomIds = entities.stream()
-        .flatMap(e -> Util.getNotNull(e.getRoomIds(), new ArrayList<Integer>()).stream())
-        .distinct()
-        .toList();
+    List<Integer> roomIds =
+        entities.stream()
+            .flatMap(e -> Util.getNotNull(e.getRoomIds(), new ArrayList<Integer>()).stream())
+            .distinct()
+            .toList();
 
     // Also collect IDs from group details
     for (LessonEntity e : entities) {
@@ -235,29 +237,25 @@ public class LessonService {
     }
 
     // Fetch all related entities
-    List<ClassResponse> classes = classRepository
-        .findAllByOrgIdAndIdInAndDeletedFalse(orgId, classIds)
-        .stream()
-        .map(ClassMapper.INSTANCE::toResponse)
-        .toList();
+    List<ClassResponse> classes =
+        classRepository.findAllByOrgIdAndIdInAndDeletedFalse(orgId, classIds).stream()
+            .map(ClassMapper.INSTANCE::toResponse)
+            .toList();
 
-    List<TeacherResponse> teachers = teacherRepository
-        .findAllByOrgIdAndIdInAndDeletedFalse(orgId, teacherIds)
-        .stream()
-        .map(TeacherMapper.INSTANCE::toResponse)
-        .toList();
+    List<TeacherResponse> teachers =
+        teacherRepository.findAllByOrgIdAndIdInAndDeletedFalse(orgId, teacherIds).stream()
+            .map(TeacherMapper.INSTANCE::toResponse)
+            .toList();
 
-    List<SubjectResponse> subjects = subjectRepository
-        .findAllByOrgIdAndIdInAndDeletedFalse(orgId, subjectIds)
-        .stream()
-        .map(SubjectMapper.INSTANCE::toResponse)
-        .toList();
+    List<SubjectResponse> subjects =
+        subjectRepository.findAllByOrgIdAndIdInAndDeletedFalse(orgId, subjectIds).stream()
+            .map(SubjectMapper.INSTANCE::toResponse)
+            .toList();
 
-    List<RoomResponse> rooms = roomRepository
-        .findAllByIdInAndDeletedFalse(roomIds)
-        .stream()
-        .map(RoomMapper.INSTANCE::toResponse)
-        .toList();
+    List<RoomResponse> rooms =
+        roomRepository.findAllByIdInAndDeletedFalse(roomIds).stream()
+            .map(RoomMapper.INSTANCE::toResponse)
+            .toList();
 
     return new LessonsWithMetadataResponse(lessonResponses, classes, teachers, rooms, subjects);
   }
@@ -352,14 +350,11 @@ public class LessonService {
                   if (g != null) {
                     List<Integer> grRoomIds = new ArrayList<>();
                     if (Util.notEmpty(d.roomIds())) {
-                         grRoomIds = d.roomIds();
+                      grRoomIds = d.roomIds();
                     }
                     groupDetails.add(
                         new GroupLessonDetailResponse(
-                            g.id(),
-                            d.teacherId(),
-                            d.subjectId(),
-                            grRoomIds));
+                            g.id(), d.teacherId(), d.subjectId(), grRoomIds));
                   }
                 }
               }
@@ -370,7 +365,7 @@ public class LessonService {
                   teacherMap.get(e.getTeacherId()),
                   e.getRoomIds() == null
                       ? new ArrayList<>()
-                      : e.getRoomIds().stream().map(roomMap::get).toList(),
+                      : e.getRoomIds().stream().map(roomMap::get).filter(Objects::nonNull).toList(),
                   subjectMap.get(e.getSubjectId()),
                   null,
                   groupDetails);

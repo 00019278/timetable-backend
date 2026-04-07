@@ -1,7 +1,8 @@
 package com.sarmich.timetable.service.solver;
 
-import com.google.ortools.sat.BoolVar;
 import com.google.ortools.sat.IntVar;
+import com.google.ortools.sat.IntervalVar;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,40 +10,67 @@ import lombok.Getter;
 
 @Getter
 public class ModelVariables {
-  // 1. Asosiy qaror o'zgaruvchilari: "Shu vaqtda dars bormi?"
-  // Key formati: "c{class}_t{teacher}_s{subject}_h{hour}_r{room}_p{period}_l{lessonId}"
-  private final Map<String, BoolVar> assignmentVars = new HashMap<>();
+  // 1. Asosiy qaror o'zgaruvchilari (Interval-based)
+  // Key: Lesson ID (Internal Solver ID or OrTLesson ID)
+  private final Map<Integer, IntVar> lessonStartVars = new HashMap<>();
+  private final Map<Integer, IntVar> lessonEndVars =
+      new HashMap<>(); // Optional if needed explicitly
+  private final Map<Integer, IntervalVar> lessonIntervalVars = new HashMap<>();
 
-  // 2. Hafta o'zgaruvchilari (Bi-weekly/Tri-weekly uchun)
+  // 2. Hafta o'zgaruvchilari (Bi-weekly logic)
+  // Key: Lesson ID -> WeekIntVar (0 or 1)
+  private final Map<Integer, IntVar> lessonWeekVars = new HashMap<>();
 
-  // A) O'zgaruvchi nomi (Key) bo'yicha bog'langan hafta (Constraintlar uchun)
-  private final Map<String, IntVar> lessonWeekVars = new HashMap<>();
-
-  // B) Lesson ID bo'yicha bog'langan hafta (VariableFactory uchun)
-  private final Map<Integer, IntVar> lessonIdToWeekVar = new HashMap<>();
-
-  // C) YANGI: SyncID bo'yicha bog'langan hafta (Parallel darslar uchun)
-  // Agar darsda syncId bo'lsa, biz hafta o'zgaruvchisini shu yerdan olamiz/saqlaymiz.
-  // Bu "Group A" va "Group B" ning haftasi (A/B) bir xil bo'lishini ta'minlaydi.
+  // Sync Groups uchun map (SyncId -> WeekVar)
   private final Map<String, IntVar> syncIdToWeekVar = new HashMap<>();
 
-  // 3. Cheklovlarni tezlashtirish uchun guruhlangan ro'yxatlar (Keshlar)
+  // 3. Resurslar uchun intervallar ro'yxati (Resource constraintlari uchun)
+  // Week A
+  private final Map<Integer, List<IntervalVar>> teacherIntervalsA = new HashMap<>();
+  private final Map<Integer, List<IntervalVar>> classIntervalsA = new HashMap<>();
+  private final Map<Integer, List<IntervalVar>> roomIntervalsA = new HashMap<>();
 
-  // O'qituvchi va Soat bo'yicha
-  private final Map<String, List<BoolVar>> lessonsByTeacherHour = new HashMap<>();
+  // Week B
+  private final Map<Integer, List<IntervalVar>> teacherIntervalsB = new HashMap<>();
+  private final Map<Integer, List<IntervalVar>> classIntervalsB = new HashMap<>();
+  private final Map<Integer, List<IntervalVar>> roomIntervalsB = new HashMap<>();
 
-  // Sinf va Soat bo'yicha
-  private final Map<String, List<BoolVar>> lessonsByClassHour = new HashMap<>();
+  // 4. Guruhlar uchun intervallar (Separated from Class for independent Subgroup
+  // scheduling)
+  // Key: Group ID -> List of Intervals
+  private final Map<Integer, List<IntervalVar>> groupIntervalsA = new HashMap<>();
+  private final Map<Integer, List<IntervalVar>> groupIntervalsB = new HashMap<>();
 
-  // Xona va Soat bo'yicha
-  private final Map<String, List<BoolVar>> lessonsByRoomHour = new HashMap<>();
+  // Helper accessors
+  public void addTeacherIntervalA(Integer teacherId, IntervalVar interval) {
+    teacherIntervalsA.computeIfAbsent(teacherId, k -> new ArrayList<>()).add(interval);
+  }
 
-  // Sinf, O'qituvchi va Fan bo'yicha
-  private final Map<String, List<BoolVar>> lessonsByClassTeacherSubject = new HashMap<>();
+  public void addTeacherIntervalB(Integer teacherId, IntervalVar interval) {
+    teacherIntervalsB.computeIfAbsent(teacherId, k -> new ArrayList<>()).add(interval);
+  }
 
-  // 4. YANGI: Ketma-ketlik (Sequential) cheklovi uchun maxsus kesh
-  // Key formati: "{lessonId}_{startHour}" (Masalan: "105_2" -> IDsi 105 dars 2-soatda boshlanyapti)
-  // Value: List<BoolVar> (Chunki bir xil dars, bir xil soatda, lekin har xil xonada bo'lishi
-  // mumkin)
-  private final Map<String, List<BoolVar>> lessonStartVars = new HashMap<>();
+  public void addClassIntervalA(Integer classId, IntervalVar interval) {
+    classIntervalsA.computeIfAbsent(classId, k -> new ArrayList<>()).add(interval);
+  }
+
+  public void addClassIntervalB(Integer classId, IntervalVar interval) {
+    classIntervalsB.computeIfAbsent(classId, k -> new ArrayList<>()).add(interval);
+  }
+
+  public void addRoomIntervalA(Integer roomId, IntervalVar interval) {
+    roomIntervalsA.computeIfAbsent(roomId, k -> new ArrayList<>()).add(interval);
+  }
+
+  public void addRoomIntervalB(Integer roomId, IntervalVar interval) {
+    roomIntervalsB.computeIfAbsent(roomId, k -> new ArrayList<>()).add(interval);
+  }
+
+  public void addGroupIntervalA(Integer groupId, IntervalVar interval) {
+    groupIntervalsA.computeIfAbsent(groupId, k -> new ArrayList<>()).add(interval);
+  }
+
+  public void addGroupIntervalB(Integer groupId, IntervalVar interval) {
+    groupIntervalsB.computeIfAbsent(groupId, k -> new ArrayList<>()).add(interval);
+  }
 }

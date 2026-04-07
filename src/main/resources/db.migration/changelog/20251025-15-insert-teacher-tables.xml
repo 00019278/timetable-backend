@@ -4,7 +4,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
-    <changeSet id="create-tables" author="00019278">
+    <changeSet id="create-tables" author="00019228">
         <sql>
 
             INSERT INTO timetable.teacher (id, org_id, full_name, short_name, availabilities, subjects, deleted, created_date, updated_date) VALUES (649, 2, 'Abduqodirov Jahonbek', 'Abduqodirov Jahonbek', null, null, false, '2025-10-12 17:45:22.231833', '2025-10-12 17:45:22.231834');

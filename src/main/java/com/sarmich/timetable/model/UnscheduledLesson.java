@@ -1,9 +1,5 @@
 package com.sarmich.timetable.model;
 
-import com.sarmich.timetable.model.response.ClassResponse;
-import com.sarmich.timetable.model.response.RoomResponse;
-import com.sarmich.timetable.model.response.SubjectResponse;
-import com.sarmich.timetable.model.response.TeacherResponse;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

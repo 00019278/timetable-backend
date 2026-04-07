@@ -7,7 +7,6 @@ import com.sarmich.timetable.model.response.LessonResponse;
 import com.sarmich.timetable.model.response.LessonsWithMetadataResponse;
 import com.sarmich.timetable.service.ImportTaqsimotService;
 import com.sarmich.timetable.service.LessonService;
-import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
