@@ -21,7 +21,7 @@ public class EmailService {
    * @param to Foydalanuvchi email manzili
    */
   public void sendVerificationEmail(String to, Integer verificationCode) {
-    String subject = "Emailni tasdiqlash uchun verifikatsiya kodi";
+    String subject = "Verification code for email";
     String htmlContent = buildHtmlForVerification(verificationCode);
     try {
       sendHtmlEmail(to, subject, htmlContent);
@@ -58,10 +58,10 @@ public class EmailService {
   private String buildHtmlForVerification(Integer code) {
     // HTML shablonni String sifatida yig'amiz
     return "<!DOCTYPE html>"
-        + "<html lang='uz'>"
+        + "<html lang='en'>"
         + "<head>"
         + "<meta charset='UTF-8'>"
-        + "<title>Hisobni tasdiqlash</title>"
+        + "<title>Verify your account</title>"
         + "<style>"
         + "body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }"
         + ".container { max-width: 600px; margin: auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }"
@@ -73,16 +73,16 @@ public class EmailService {
         + "</head>"
         + "<body>"
         + "<div class='container'>"
-        + "<div class='header'><h1>Hisobingizni tasdiqlang</h1></div>"
+        + "<div class='header'><h1>Verify your account</h1></div>"
         + "<div class='content'>"
-        + "<p>Salom!</p>"
-        + "<p>Hisobingizni faollashtirish uchun quyidagi verifikatsiya kodidan foydalaning:</p>"
+        + "<p>Hello!</p>"
+        + "<p>Please use the following verification code to activate your account:</p>"
         + "<div class='code'>"
         + code
         + "</div>"
-        + "<p>Agar siz ro'yxatdan o'tmagan bo'lsangiz, ushbu xabarga e'tibor bermang.</p>"
+        + "<p>If you did not register, please ignore this message.</p>"
         + "</div>"
-        + "<div class='footer'><p>&copy; 2025 Sizning kompaniyangiz nomi</p></div>"
+        + "<div class='footer'><p>&copy; 2026 WIUT BISP</p></div>"
         + "</div>"
         + "</body>"
         + "</html>";
