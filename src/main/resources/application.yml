@@ -3,7 +3,6 @@ spring:
     active: local
 
 server:
-#  port: 8101
   forward-headers-strategy: framework
   servlet:
     contextPath: /
@@ -24,4 +23,3 @@ info:
     name: ${spring.application.name}
     version: "@application.version@"
     description: "@application.description@"
-
