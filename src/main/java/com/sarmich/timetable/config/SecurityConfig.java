@@ -39,11 +39,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(
                     exchangeSpec ->
                             exchangeSpec
-                                    // Убрали /api, так как Nginx его отрезает
-                                    .requestMatchers("/swagger-ui.html", "/swagger-ui/**").permitAll()
-                                    .requestMatchers("/actuator/**", "/v3/api-docs/**").permitAll()
-                                    .requestMatchers("/auth/**").permitAll() // Теперь совпадет с тем, что шлет Nginx
-                                    .requestMatchers("/ws/**").permitAll())
+                                    // Возвращаем /api в начало всех путей
+                                    .requestMatchers("/api/swagger-ui.html", "/api/swagger-ui/**").permitAll()
+                                    .requestMatchers("/api/actuator/**", "/api/v3/api-docs/**").permitAll()
+                                    .requestMatchers("/api/auth/**").permitAll()
+                                    .requestMatchers("/api/ws/**").permitAll())
             .authorizeHttpRequests((auth) -> auth.anyRequest().authenticated())
             .sessionManagement(
                     manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
