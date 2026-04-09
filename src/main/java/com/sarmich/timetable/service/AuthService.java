@@ -1,3 +1,4 @@
+
 package com.sarmich.timetable.service;
 
 import com.google.firebase.auth.*;
@@ -33,14 +34,14 @@ public class AuthService {
   private final CompanyRepository companyRepository;
 
   public GetCodeResponse getCode(GetCodeRequest req) {
-    log.info("[AUTH] Sending verification  to {}", req.email());
+    log.info("[AUTH] Sending verification to {}", req.email());
     userRepository
-        .findByEmail(req.email())
-        .ifPresent(
-            u -> {
-              throw new AlreadyExistsException(
-                  ErrorCode.ALREADY_EXISTS_ERROR_CODE, "User already exists with this email");
-            });
+            .findByEmail(req.email())
+            .ifPresent(
+                    u -> {
+                      throw new AlreadyExistsException(
+                              ErrorCode.ALREADY_EXISTS_ERROR_CODE, "User already exists with this email");
+                    });
     return verificationCodeService.generateAndStore(req.email(), 180);
   }
 
@@ -49,12 +50,12 @@ public class AuthService {
     verificationCodeService.validate(req.email(), req.code());
 
     userRepository
-        .findByEmail(req.email())
-        .ifPresent(
-            u -> {
-              throw new AlreadyExistsException(
-                  ErrorCode.ALREADY_EXISTS_ERROR_CODE, "User already exists with this email");
-            });
+            .findByEmail(req.email())
+            .ifPresent(
+                    u -> {
+                      throw new AlreadyExistsException(
+                              ErrorCode.ALREADY_EXISTS_ERROR_CODE, "User already exists with this email");
+                    });
     UserEntity user = new UserEntity();
     user.setName(req.name());
     user.setSurname(req.surname());
@@ -64,7 +65,7 @@ public class AuthService {
     UserEntity save = userRepository.save(user);
 
     CompanyEntity company =
-        companyService.create(new CompanyRequest(user.getName(), null, null, null), save.getId());
+            companyService.create(new CompanyRequest(user.getName(), null, null, null), save.getId());
     String token = jwtService.generateUserToken(user.getId(), company.getId(), "timetable", 0L);
     return new AuthResponse(token);
   }
@@ -73,14 +74,21 @@ public class AuthService {
     Optional<UserEntity> optional = userRepository.findByEmail(dto.email());
     if (optional.isEmpty()) {
       throw new InvalidCredentialsException(
-          ErrorCode.INVALID_CREDENTIALS_ERROR_CODE, "email or password incorrect");
+              ErrorCode.INVALID_CREDENTIALS_ERROR_CODE, "email or password incorrect");
     }
     UserEntity user = optional.get();
     if (!BCrypt.checkpw(dto.password(), user.getPassword())) {
       throw new InvalidCredentialsException(
-          ErrorCode.INVALID_CREDENTIALS_ERROR_CODE, "email or password incorrect");
+              ErrorCode.INVALID_CREDENTIALS_ERROR_CODE, "email or password incorrect");
     }
+
+    // ✅ ИСПРАВЛЕНО: если компания не найдена — создаём новую
     CompanyEntity company = companyRepository.findByCreatedByAndDeletedFalse(user.getId());
+    if (company == null) {
+      company = companyService.create(
+              new CompanyRequest(user.getName(), null, null, null), user.getId());
+    }
+
     String token = jwtService.generateUserToken(user.getId(), company.getId(), "timetable", 0L);
     return new AuthResponse(token);
   }
@@ -89,22 +97,22 @@ public class AuthService {
     try {
       FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.idToken());
       String uid = decodedToken.getUid();
-
-      UserRecord user;
+[10.04.2026 1:40] Sultonkhon Ziyodullaev: UserRecord user;
       try {
         user = FirebaseAuth.getInstance().getUser(uid);
       } catch (FirebaseAuthException e) {
         log.error("{}", e.getMessage(), e);
         throw new UnauthorizedException("User not found", e);
       }
+
       for (UserInfo providerDatum : user.getProviderData()) {
         System.out.println(providerDatum.getProviderId());
       }
+
       final String email = user.getEmail().toLowerCase();
       final String name = user.getDisplayName();
-      //      boolean verifyEmail = user.isEmailVerified();
       final String image = user.getPhotoUrl();
-      //      String phone = user.getPhoneNumber();
+
       if (Objects.equals(user.getProviderData()[0].getProviderId(), "google.com")) {
         var entityUser = userRepository.findByEmail(email).orElse(null);
         if (entityUser == null) {
@@ -113,13 +121,18 @@ public class AuthService {
         entityUser.setName(name);
         entityUser.setEmail(email);
         entityUser.setPhoto(image);
-
         entityUser.setRole(ProfileRole.ROLE_USER);
         entityUser = userRepository.save(entityUser);
-        CompanyEntity company =
-            companyService.create(new CompanyRequest(name, null, null, null), entityUser.getId());
+
+        // ✅ ИСПРАВЛЕНО: не создаём компанию повторно если уже есть
+        CompanyEntity company = companyRepository.findByCreatedByAndDeletedFalse(entityUser.getId());
+        if (company == null) {
+          company = companyService.create(
+                  new CompanyRequest(name, null, null, null), entityUser.getId());
+        }
+
         return new AuthResponse(
-            jwtService.generateUserToken(entityUser.getId(), company.getId(), "timetable", 0L));
+                jwtService.generateUserToken(entityUser.getId(), company.getId(), "timetable", 0L));
       } else {
         throw new UnauthorizedException(ErrorCode.UNAUTHORIZED_ERROR_CODE, "Can't find provider");
       }
