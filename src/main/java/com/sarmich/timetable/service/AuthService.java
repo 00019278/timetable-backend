@@ -97,7 +97,7 @@ public class AuthService {
     try {
       FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(request.idToken());
       String uid = decodedToken.getUid();
-[10.04.2026 1:40] Sultonkhon Ziyodullaev: UserRecord user;
+      UserRecord user;
       try {
         user = FirebaseAuth.getInstance().getUser(uid);
       } catch (FirebaseAuthException e) {
