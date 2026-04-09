@@ -13,6 +13,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -25,29 +30,42 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityWebFilterChain(final HttpSecurity http) throws Exception {
     return http.exceptionHandling(
-            exception ->
-                exception.authenticationEntryPoint(
-                    new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-        .csrf(AbstractHttpConfigurer::disable)
-        .cors(Customizer.withDefaults())
-        .httpBasic(AbstractHttpConfigurer::disable)
-        .authorizeHttpRequests(
-            exchangeSpec ->
-                exchangeSpec
-                    .requestMatchers("/swagger-ui.html")
-                    .permitAll()
-                    .requestMatchers("/swagger-ui/**", "/api/actuator/**")
-                    .permitAll()
-                    .requestMatchers("/api/v3/api-docs/**")
-                    .permitAll()
-                    .requestMatchers("/api/auth/**")
-                    .permitAll()
-                    .requestMatchers("/ws/**")
-                    .permitAll())
-        .authorizeHttpRequests((auth) -> auth.anyRequest().authenticated())
-        .sessionManagement(
-            manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-        .build();
+                    exception ->
+                            exception.authenticationEntryPoint(
+                                    new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Используем наш бин ниже
+            .httpBasic(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(
+                    exchangeSpec ->
+                            exchangeSpec
+                                    // Убрали /api, так как Nginx его отрезает
+                                    .requestMatchers("/swagger-ui.html", "/swagger-ui/**").permitAll()
+                                    .requestMatchers("/actuator/**", "/v3/api-docs/**").permitAll()
+                                    .requestMatchers("/auth/**").permitAll() // Теперь совпадет с тем, что шлет Nginx
+                                    .requestMatchers("/ws/**").permitAll())
+            .authorizeHttpRequests((auth) -> auth.anyRequest().authenticated())
+            .sessionManagement(
+                    manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .build();
+  }
+
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration configuration = new CorsConfiguration();
+    // Разрешаем запросы с твоего домена и локалки (для тестов)
+    configuration.setAllowedOrigins(Arrays.asList(
+            "https://e-timetable.uz",
+            "https://www.e-timetable.uz",
+            "http://localhost:5173"
+    ));
+    configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+    configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+    configuration.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", configuration);
+    return source;
   }
 }
