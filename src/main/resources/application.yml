@@ -26,3 +26,4 @@ info:
     name: ${spring.application.name}
     version: "@application.version@"
     description: "@application.description@"
+

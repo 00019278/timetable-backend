@@ -28,6 +28,10 @@ public class BuildingService {
     log.debug("Adding building request {} for organization {}", request, orgId);
     BuildingEntity entity = BuildingMapper.INSTANCE.toEntity(request);
     entity.setOrgId(orgId);
+
+    // ДОБАВЛЯЕМ ВОТ ЭТУ СТРОЧКУ:
+    entity.setDeleted(false);
+
     return BuildingMapper.INSTANCE.toResponse(buildingRepository.save(entity));
   }
 
