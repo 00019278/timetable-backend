@@ -14,16 +14,19 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/rooms/v1")
+// ВОТ НАША МАГИЯ: Заставляем контроллер слушать оба варианта адреса
+@RequestMapping({"/api/rooms/v1", "/api/v1/rooms"})
 @AllArgsConstructor
 public class RoomController {
   private final RoomService roomService;
 
   @PostMapping
   public Response<RoomResponse> addRoom(
-      @AuthenticationPrincipal UserPrincipal userPrincipal, @RequestBody RoomRequest request) {
+          @AuthenticationPrincipal UserPrincipal userPrincipal, @RequestBody RoomRequest request) {
     return Response.ok(roomService.add(userPrincipal.orgId(), request));
   }
+
+// ... (остальной код оставь без изменений)
 
   @PutMapping("/{id}")
   public Response<Void> updateRoom(
