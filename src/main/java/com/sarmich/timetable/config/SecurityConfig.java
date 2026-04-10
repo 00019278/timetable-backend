@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -34,17 +33,25 @@ public class SecurityConfig {
                             exception.authenticationEntryPoint(
                                     new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Используем наш бин ниже
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .httpBasic(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(
-                    exchangeSpec ->
-                            exchangeSpec
-                                    // Возвращаем /api в начало всех путей
-                                    .requestMatchers("/api/swagger-ui.html", "/api/swagger-ui/**").permitAll()
-                                    .requestMatchers("/api/actuator/**", "/api/v3/api-docs/**").permitAll()
+                    auth ->
+                            auth
+                                    // Основное API (логин, регистрация)
                                     .requestMatchers("/api/auth/**").permitAll()
-                                    .requestMatchers("/api/ws/**").permitAll())
-            .authorizeHttpRequests((auth) -> auth.anyRequest().authenticated())
+
+                                    // ВАЖНО: Разрешаем пути Swagger БЕЗ /api (так как Nginx их отрезает) + страницу /error
+                                    .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/error").permitAll()
+
+                                    // На всякий случай оставляем и с /api (для тестирования на локалке)
+                                    .requestMatchers("/api/swagger-ui/**", "/api/v3/api-docs/**").permitAll()
+
+                                    // Вспомогательные пути
+                                    .requestMatchers("/api/actuator/**", "/api/ws/**").permitAll()
+
+                                    // Все остальное закрыто
+                                    .anyRequest().authenticated())
             .sessionManagement(
                     manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -54,7 +61,6 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    // Разрешаем запросы с твоего домена и локалки (для тестов)
     configuration.setAllowedOrigins(Arrays.asList(
             "https://e-timetable.uz",
             "https://www.e-timetable.uz",
